@@ -1,17 +1,14 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
-
+using MongoDB.AspNet.Identity;
 
 namespace MongoDB.AspNet.Identity
 {
@@ -135,7 +132,7 @@ namespace MongoDB.AspNet.Identity
 			if (user == null)
 				throw new ArgumentNullException("user");
 
-			return Task.FromResult(user.Logins.ToIList());
+            return Task.FromResult(user.Logins.ToIList());
 		}
 
 		public Task RemoveLoginAsync(TUser user, UserLoginInfo login)

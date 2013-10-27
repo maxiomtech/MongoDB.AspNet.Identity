@@ -49,6 +49,6 @@ public AccountController()
 }
 ```
 
-## Thanks Too ##
+## Thanks To ##
 
 Special thanks to [David Boike](https://github.com/DavidBoike) whos [RavenDB AspNet Identity](https://github.com/ILMServices/RavenDB.AspNet.Identity) project gave me the bae for jumpstarting the MongoDB provider

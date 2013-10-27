@@ -30,11 +30,13 @@ These instructions assume you know how to set up MongoDB within an MVC applicati
 ```PowerShell
 Uninstall-Package Microsoft.AspNet.Identity.EntityFramework
 Uninstall-Package EntityFramework
+Install-Package MongoDB.AspNet.Identity
 ```
     
 3. In ~/Models/IdentityModels.cs:
     * Remove the namespace: Microsoft.AspNet.Identity.EntityFramework
     * Add the namespace: MongoDB.AspNet.Identity
+	* Remove the ApplicationDbContext class completely.
 4. In ~/Controllers/AccountController.cs
     * Remove the namespace: Microsoft.AspNet.Identity.EntityFramework
     * Add the connection string name to the constructor of the UserStore. Or empty constructor will use DefaultConnection

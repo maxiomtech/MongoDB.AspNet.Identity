@@ -34,7 +34,7 @@ Uninstall-Package EntityFramework
     
 3. In ~/Models/IdentityModels.cs:
     * Remove the namespace: Microsoft.AspNet.Identity.EntityFramework
-    * Add the namespace: RavenDB.AspNet.Identity
+    * Add the namespace: MongoDB.AspNet.Identity
 4. In ~/Controllers/AccountController.cs
     * Remove the namespace: Microsoft.AspNet.Identity.EntityFramework
     * Add the connection string name to the constructor of the UserStore. Or empty constructor will use DefaultConnection

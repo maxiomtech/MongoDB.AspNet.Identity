@@ -8,17 +8,16 @@ using Microsoft.AspNet.Identity;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
-using MongoDB.AspNet.Identity;
 
 namespace MongoDB.AspNet.Identity
 {
-    public class UserStore<TUser> : IUserStore<TUser>, IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
+    public class UserStore<TUser> : IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
         IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>
         where TUser : IdentityUser
     {
         private bool _disposed;
 
-        private MongoDatabase dbContext;
+        private MongoDatabase db;
 
         public UserStore(string databaseName)
         {
@@ -26,7 +25,7 @@ namespace MongoDB.AspNet.Identity
                     new MongoConnectionStringBuilder(ConfigurationManager.ConnectionStrings[databaseName].ConnectionString);
             MongoClientSettings settings = MongoClientSettings.FromConnectionStringBuilder(conString);
             MongoServer server = new MongoClient(settings).GetServer();
-            dbContext = server.GetDatabase(conString.DatabaseName);
+            db = server.GetDatabase(conString.DatabaseName);
         }
 
         public Task CreateAsync(TUser user)
@@ -35,18 +34,10 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            dbContext.GetCollection<TUser>("AspNetUsers").Insert(user);
+            db.GetCollection<TUser>("AspNetUsers").Insert(user);
 
-            return Task.FromResult(true);
+            return Task.FromResult(user);
         }
-
-        //private string UsernameToDocumentId(string userName)
-        //{
-        //    var conventions = session.Advanced.DocumentStore.Conventions;
-        //    string typeTagName = conventions.GetTypeTagName(typeof (TUser));
-        //    string tag = conventions.TransformTypeTagNameToDocumentKeyPrefix(typeTagName);
-        //    return String.Format("{0}{1}{2}", tag, conventions.IdentityPartsSeparator, userName);
-        //}
 
         public Task DeleteAsync(TUser user)
         {
@@ -54,20 +45,21 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            dbContext.GetCollection("AspNetUsers").Remove((Query.EQ("_id", ObjectId.Parse(user.Id))));
+            db.GetCollection("AspNetUsers").Remove((Query.EQ("_id", ObjectId.Parse(user.Id))));
             return Task.FromResult(true);
         }
 
         public Task<TUser> FindByIdAsync(string userId)
         {
-            //var user = this.session.Load<TUser>(userId);
-            var user = dbContext.GetCollection<TUser>("AspNetUsers").FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
+            this.ThrowIfDisposed();
+            var user = db.GetCollection<TUser>("AspNetUsers").FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
             return Task.FromResult(user);
         }
 
         public Task<TUser> FindByNameAsync(string userName)
         {
-            var user = dbContext.GetCollection<TUser>("AspNetUsers").FindOne((Query.EQ("UserName", userName)));
+            this.ThrowIfDisposed();
+            var user = db.GetCollection<TUser>("AspNetUsers").FindOne((Query.EQ("UserName", userName)));
             return Task.FromResult(user);
         }
 
@@ -77,9 +69,9 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            dbContext.GetCollection<TUser>("AspNetUsers").Update(Query.EQ("_id", ObjectId.Parse(user.Id)), Update.Replace(user), UpdateFlags.Upsert);
+            db.GetCollection<TUser>("AspNetUsers").Update(Query.EQ("_id", ObjectId.Parse(user.Id)), Update.Replace(user), UpdateFlags.Upsert);
 
-            return Task.FromResult(true);
+            return Task.FromResult(user);
         }
 
         private void ThrowIfDisposed()
@@ -102,14 +94,6 @@ namespace MongoDB.AspNet.Identity
             if (!user.Logins.Any(x => x.LoginProvider == login.LoginProvider && x.ProviderKey == login.ProviderKey))
             {
                 user.Logins.Add(login);
-
-                dbContext.GetCollection("AspNetUserLogins").Insert(new IdentityUserLogin
-                {
-                    UserId = user.Id,
-                    LoginProvider = login.LoginProvider,
-                    ProviderKey = login.ProviderKey
-                });
-
             }
 
             return Task.FromResult(true);
@@ -118,12 +102,10 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindAsync(UserLoginInfo login)
         {
             TUser user = null;
-            var userLogin =
-                dbContext.GetCollection<IdentityUserLogin>("AspNetUserLogins")
-                    .FindOne(Query.And(Query.EQ("LoginProvider", login.LoginProvider),
-                        Query.EQ("ProviderKey", login.ProviderKey)));
-            if (userLogin != null)
-                user = dbContext.GetCollection<TUser>("AspNetUsers").FindOneById(ObjectId.Parse(userLogin.UserId));
+            user =
+                db.GetCollection<TUser>("AspNetUsers")
+                    .FindOne(Query.And(Query.EQ("Logins.LoginProvider", login.LoginProvider),
+                        Query.EQ("Logins.ProviderKey", login.ProviderKey)));
 
             return Task.FromResult(user);
         }
@@ -142,11 +124,6 @@ namespace MongoDB.AspNet.Identity
             this.ThrowIfDisposed();
             if (user == null)
                 throw new ArgumentNullException("user");
-
-            var userLogin =
-                dbContext.GetCollection<IdentityUserLogin>("AspNetUserLogins")
-                    .Remove(Query.And(Query.EQ("LoginProvider", login.LoginProvider),
-                        Query.EQ("ProviderKey", login.ProviderKey)));
 
             user.Logins.RemoveAll(x => x.LoginProvider == login.LoginProvider && x.ProviderKey == login.ProviderKey);
 
@@ -167,6 +144,8 @@ namespace MongoDB.AspNet.Identity
                     ClaimValue = claim.Value
                 });
             }
+
+
             return Task.FromResult(0);
         }
 
@@ -246,7 +225,7 @@ namespace MongoDB.AspNet.Identity
             if (!user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase))
                 user.Roles.Add(role);
 
-            return Task.FromResult(0);
+            return Task.FromResult(true);
         }
 
         public Task<IList<string>> GetRolesAsync(TUser user)

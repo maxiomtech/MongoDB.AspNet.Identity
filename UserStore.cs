@@ -12,33 +12,33 @@ using MongoDB.AspNet.Identity;
 
 namespace MongoDB.AspNet.Identity
 {
-	public class UserStore<TUser> : IUserStore<TUser>, IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
-		IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>
-		where TUser : IdentityUser
-	{
-		private bool _disposed;
-     
-	    private MongoDatabase dbContext;
+    public class UserStore<TUser> : IUserStore<TUser>, IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
+        IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>
+        where TUser : IdentityUser
+    {
+        private bool _disposed;
 
-	    public UserStore(string databaseName)
-	    {
+        private MongoDatabase dbContext;
+
+        public UserStore(string databaseName)
+        {
             var conString =
                     new MongoConnectionStringBuilder(ConfigurationManager.ConnectionStrings[databaseName].ConnectionString);
             MongoClientSettings settings = MongoClientSettings.FromConnectionStringBuilder(conString);
             MongoServer server = new MongoClient(settings).GetServer();
             dbContext = server.GetDatabase(conString.DatabaseName);
-	    }
+        }
 
-		public Task CreateAsync(TUser user)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+        public Task CreateAsync(TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-		    dbContext.GetCollection<TUser>("AspNetUsers").Insert(user);
-            
-			return Task.FromResult(true);
-		}
+            dbContext.GetCollection<TUser>("AspNetUsers").Insert(user);
+
+            return Task.FromResult(true);
+        }
 
         //private string UsernameToDocumentId(string userName)
         //{
@@ -48,232 +48,234 @@ namespace MongoDB.AspNet.Identity
         //    return String.Format("{0}{1}{2}", tag, conventions.IdentityPartsSeparator, userName);
         //}
 
-		public Task DeleteAsync(TUser user)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+        public Task DeleteAsync(TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-		    dbContext.GetCollection("AspNetUsers").Remove((Query.EQ("_id", ObjectId.Parse(user.Id))));
-			return Task.FromResult(true);
-		}
+            dbContext.GetCollection("AspNetUsers").Remove((Query.EQ("_id", ObjectId.Parse(user.Id))));
+            return Task.FromResult(true);
+        }
 
-		public Task<TUser> FindByIdAsync(string userId)
-		{
+        public Task<TUser> FindByIdAsync(string userId)
+        {
             //var user = this.session.Load<TUser>(userId);
-		    var user = dbContext.GetCollection<TUser>("AspNetUsers").FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
-			return Task.FromResult(user);
-		}
+            var user = dbContext.GetCollection<TUser>("AspNetUsers").FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
+            return Task.FromResult(user);
+        }
 
-		public Task<TUser> FindByNameAsync(string userName)
-		{
-			var user = dbContext.GetCollection<TUser>("AspNetUsers").FindOne((Query.EQ("UserName", userName)));
-		    return Task.FromResult(user);
-		}
+        public Task<TUser> FindByNameAsync(string userName)
+        {
+            var user = dbContext.GetCollection<TUser>("AspNetUsers").FindOne((Query.EQ("UserName", userName)));
+            return Task.FromResult(user);
+        }
 
-		public Task UpdateAsync(TUser user)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+        public Task UpdateAsync(TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-			return Task.FromResult(true);
-		}
+            dbContext.GetCollection<TUser>("AspNetUsers").Update(Query.EQ("_id", ObjectId.Parse(user.Id)), Update.Replace(user), UpdateFlags.Upsert);
 
-		private void ThrowIfDisposed()
-		{
-			if (this._disposed)
-				throw new ObjectDisposedException(this.GetType().Name);
-		}
+            return Task.FromResult(true);
+        }
 
-		public void Dispose()
-		{
-			this._disposed = true;
-		}
+        private void ThrowIfDisposed()
+        {
+            if (this._disposed)
+                throw new ObjectDisposedException(this.GetType().Name);
+        }
 
-		public Task AddLoginAsync(TUser user, UserLoginInfo login)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+        public void Dispose()
+        {
+            this._disposed = true;
+        }
 
-			if (!user.Logins.Any(x => x.LoginProvider == login.LoginProvider && x.ProviderKey == login.ProviderKey))
-			{
-				user.Logins.Add(login);
+        public Task AddLoginAsync(TUser user, UserLoginInfo login)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-			    dbContext.GetCollection("AspNetUserLogins").Insert(new IdentityUserLogin
-			    {
-			        UserId = user.Id,
-			        LoginProvider = login.LoginProvider,
-			        ProviderKey = login.ProviderKey
-			    });
+            if (!user.Logins.Any(x => x.LoginProvider == login.LoginProvider && x.ProviderKey == login.ProviderKey))
+            {
+                user.Logins.Add(login);
 
-			}
+                dbContext.GetCollection("AspNetUserLogins").Insert(new IdentityUserLogin
+                {
+                    UserId = user.Id,
+                    LoginProvider = login.LoginProvider,
+                    ProviderKey = login.ProviderKey
+                });
 
-			return Task.FromResult(true);
-		}
+            }
 
-		public Task<TUser> FindAsync(UserLoginInfo login)
-		{
-		    TUser user = null;
-		    var userLogin =
+            return Task.FromResult(true);
+        }
+
+        public Task<TUser> FindAsync(UserLoginInfo login)
+        {
+            TUser user = null;
+            var userLogin =
                 dbContext.GetCollection<IdentityUserLogin>("AspNetUserLogins")
-		            .FindOne(Query.And(Query.EQ("LoginProvider", login.LoginProvider),
-		                Query.EQ("ProviderKey", login.ProviderKey)));
-		    if (userLogin != null)
-		        user = dbContext.GetCollection<TUser>("AspNetUsers").FindOneById(ObjectId.Parse(userLogin.UserId));
+                    .FindOne(Query.And(Query.EQ("LoginProvider", login.LoginProvider),
+                        Query.EQ("ProviderKey", login.ProviderKey)));
+            if (userLogin != null)
+                user = dbContext.GetCollection<TUser>("AspNetUsers").FindOneById(ObjectId.Parse(userLogin.UserId));
 
-			return Task.FromResult(user);
-		}
+            return Task.FromResult(user);
+        }
 
-		public Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+        public Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
             return Task.FromResult(user.Logins.ToIList());
-		}
+        }
 
-		public Task RemoveLoginAsync(TUser user, UserLoginInfo login)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
-            
+        public Task RemoveLoginAsync(TUser user, UserLoginInfo login)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
             var userLogin =
                 dbContext.GetCollection<IdentityUserLogin>("AspNetUserLogins")
                     .Remove(Query.And(Query.EQ("LoginProvider", login.LoginProvider),
                         Query.EQ("ProviderKey", login.ProviderKey)));
-			
-			user.Logins.RemoveAll(x => x.LoginProvider == login.LoginProvider && x.ProviderKey == login.ProviderKey);
-			
-			return Task.FromResult(0);
-		}
 
-		public Task AddClaimAsync(TUser user, Claim claim)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+            user.Logins.RemoveAll(x => x.LoginProvider == login.LoginProvider && x.ProviderKey == login.ProviderKey);
 
-			if (!user.Claims.Any(x => x.ClaimType == claim.Type && x.ClaimValue == claim.Value))
-			{
-				user.Claims.Add(new IdentityUserClaim
-				{
-					ClaimType = claim.Type,
-					ClaimValue = claim.Value
-				});
-			}
-			return Task.FromResult(0);
-		}
+            return Task.FromResult(0);
+        }
 
-		public Task<IList<Claim>> GetClaimsAsync(TUser user)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+        public Task AddClaimAsync(TUser user, Claim claim)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-			IList<Claim> result = user.Claims.Select(c => new Claim(c.ClaimType, c.ClaimValue)).ToList();
-			return Task.FromResult(result);
-		}
+            if (!user.Claims.Any(x => x.ClaimType == claim.Type && x.ClaimValue == claim.Value))
+            {
+                user.Claims.Add(new IdentityUserClaim
+                {
+                    ClaimType = claim.Type,
+                    ClaimValue = claim.Value
+                });
+            }
+            return Task.FromResult(0);
+        }
 
-		public Task RemoveClaimAsync(TUser user, Claim claim)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+        public Task<IList<Claim>> GetClaimsAsync(TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-			user.Claims.RemoveAll(x => x.ClaimType == claim.Type && x.ClaimValue == claim.Value);
-			return Task.FromResult(0);
-		}
+            IList<Claim> result = user.Claims.Select(c => new Claim(c.ClaimType, c.ClaimValue)).ToList();
+            return Task.FromResult(result);
+        }
 
-		public Task<string> GetPasswordHashAsync(TUser user)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+        public Task RemoveClaimAsync(TUser user, Claim claim)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-			return Task.FromResult(user.PasswordHash);
-		}
+            user.Claims.RemoveAll(x => x.ClaimType == claim.Type && x.ClaimValue == claim.Value);
+            return Task.FromResult(0);
+        }
 
-		public Task<bool> HasPasswordAsync(TUser user)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+        public Task<string> GetPasswordHashAsync(TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-			return Task.FromResult<bool>(user.PasswordHash != null);
-		}
+            return Task.FromResult(user.PasswordHash);
+        }
 
-		public Task SetPasswordHashAsync(TUser user, string passwordHash)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+        public Task<bool> HasPasswordAsync(TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-			user.PasswordHash = passwordHash;
-			return Task.FromResult(0);
-		}
+            return Task.FromResult<bool>(user.PasswordHash != null);
+        }
 
-		public Task<string> GetSecurityStampAsync(TUser user)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
-			
-			return Task.FromResult(user.SecurityStamp);
-		}
+        public Task SetPasswordHashAsync(TUser user, string passwordHash)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-		public Task SetSecurityStampAsync(TUser user, string stamp)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+            user.PasswordHash = passwordHash;
+            return Task.FromResult(0);
+        }
 
-			user.SecurityStamp = stamp;
-			return Task.FromResult(0);
-		}
+        public Task<string> GetSecurityStampAsync(TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-		public Task AddToRoleAsync(TUser user, string role)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+            return Task.FromResult(user.SecurityStamp);
+        }
 
-			if (!user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase))
-				user.Roles.Add(role);
+        public Task SetSecurityStampAsync(TUser user, string stamp)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-			return Task.FromResult(0);
-		}
+            user.SecurityStamp = stamp;
+            return Task.FromResult(0);
+        }
 
-		public Task<IList<string>> GetRolesAsync(TUser user)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+        public Task AddToRoleAsync(TUser user, string role)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-			return Task.FromResult<IList<string>>(user.Roles);
-		}
+            if (!user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase))
+                user.Roles.Add(role);
 
-		public Task<bool> IsInRoleAsync(TUser user, string role)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+            return Task.FromResult(0);
+        }
 
-			return Task.FromResult(user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase));
-		}
+        public Task<IList<string>> GetRolesAsync(TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-		public Task RemoveFromRoleAsync(TUser user, string role)
-		{
-			this.ThrowIfDisposed();
-			if (user == null)
-				throw new ArgumentNullException("user");
+            return Task.FromResult<IList<string>>(user.Roles);
+        }
 
-			user.Roles.RemoveAll(r => String.Equals(r, role, StringComparison.InvariantCultureIgnoreCase));
+        public Task<bool> IsInRoleAsync(TUser user, string role)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
 
-			return Task.FromResult(0);
-		}
-	}
+            return Task.FromResult(user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase));
+        }
+
+        public Task RemoveFromRoleAsync(TUser user, string role)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            user.Roles.RemoveAll(r => String.Equals(r, role, StringComparison.InvariantCultureIgnoreCase));
+
+            return Task.FromResult(0);
+        }
+    }
 }

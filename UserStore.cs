@@ -8,6 +8,7 @@ using Microsoft.AspNet.Identity;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
+using MongoDB.Driver.Linq;
 
 namespace MongoDB.AspNet.Identity
 {
@@ -59,7 +60,9 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindByNameAsync(string userName)
         {
             this.ThrowIfDisposed();
-            var user = db.GetCollection<TUser>("AspNetUsers").FindOne((Query.EQ("UserName", userName)));
+            var user = db.GetCollection<TUser>("AspNetUsers")
+				.AsQueryable()
+				.First(x => x.UserName == userName);
             return Task.FromResult(user);
         }
 
@@ -102,10 +105,10 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindAsync(UserLoginInfo login)
         {
             TUser user = null;
-            user =
-                db.GetCollection<TUser>("AspNetUsers")
-                    .FindOne(Query.And(Query.EQ("Logins.LoginProvider", login.LoginProvider),
-                        Query.EQ("Logins.ProviderKey", login.ProviderKey)));
+	        user =
+		        db.GetCollection<TUser>("AspNetUsers")
+			        .AsQueryable()
+					.First( u => u.Logins.Any( l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey ) );
 
             return Task.FromResult(user);
         }

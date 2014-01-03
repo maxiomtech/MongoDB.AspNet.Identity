@@ -27,6 +27,12 @@ namespace MongoDB.AspNet.Identity
             MongoServer server = new MongoClient(settings).GetServer();
             db = server.GetDatabase(conString.DatabaseName);
         }
+        
+        public UserStore(string connectionString, string dbName)
+        {
+            var client = new MongoClient(ConfigurationManager.ConnectionStrings[connectionString].ConnectionString);
+            db = client.GetServer().GetDatabase(dbName);
+        }
 
         public Task CreateAsync(TUser user)
         {

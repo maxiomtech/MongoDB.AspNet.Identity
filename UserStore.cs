@@ -19,10 +19,10 @@ namespace MongoDB.AspNet.Identity
 
         private MongoDatabase db;
 
-        public UserStore(string databaseName)
+        public UserStore(string connectionName)
         {
             var conString =
-                    new MongoConnectionStringBuilder(ConfigurationManager.ConnectionStrings[databaseName].ConnectionString);
+                    new MongoConnectionStringBuilder(ConfigurationManager.ConnectionStrings[connectionName].ConnectionString);
             MongoClientSettings settings = MongoClientSettings.FromConnectionStringBuilder(conString);
             MongoServer server = new MongoClient(settings).GetServer();
             db = server.GetDatabase(conString.DatabaseName);

@@ -10,7 +10,7 @@ Entity Framework provider (Microsoft.AspNet.Identity.EntityFramework).
 
 ## Features ##
 * Drop-in replacement ASP.NET Identity with MongoDB as the backing store.
-* Requires only 2 document types, while EntityFramework requires 5 tables
+* Requires only 1 mongo document type, while EntityFramework requires 5 tables
 * Contains the same IdentityUser class used by the EntityFramework provider in the MVC 5 project template.
 * Supports additional profile properties on your application's user model.
 * Provides UserStore<TUser> implementation that implements the same interfaces as the EntityFramework version:

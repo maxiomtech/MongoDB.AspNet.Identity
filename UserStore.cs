@@ -15,24 +15,53 @@ namespace MongoDB.AspNet.Identity
         IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>
         where TUser : IdentityUser
     {
-        private bool _disposed;
 
+        #region Private Methods & Variables
+        private bool _disposed;
         private MongoDatabase db;
+        private MongoDatabase GetDatabaseFromConnectionString(string connectionString)
+        {
+            var conString = new MongoConnectionStringBuilder(connectionString);
+            MongoClientSettings settings = MongoClientSettings.FromConnectionStringBuilder(conString);
+            MongoServer server = new MongoClient(settings).GetServer();
+            return server.GetDatabase(conString.DatabaseName);
+        }
+
+        private MongoDatabase GetDatabaseFromUrl(MongoUrl url)
+        {
+            var client = new MongoClient(url);
+            var server = client.GetServer();
+            return server.GetDatabase(url.DatabaseName); // WriteConcern defaulted to Acknowledged
+        }
+        #endregion
+
 
         public UserStore(string connectionName)
         {
-            var conString =
-                    new MongoConnectionStringBuilder(ConfigurationManager.ConnectionStrings[connectionName].ConnectionString);
-            MongoClientSettings settings = MongoClientSettings.FromConnectionStringBuilder(conString);
-            MongoServer server = new MongoClient(settings).GetServer();
-            db = server.GetDatabase(conString.DatabaseName);
+            db = GetDatabaseFromConnectionString(ConfigurationManager.ConnectionStrings[connectionName].ConnectionString);
         }
-        
+
         public UserStore(string connectionString, string dbName)
         {
             var client = new MongoClient(ConfigurationManager.ConnectionStrings[connectionString].ConnectionString);
             db = client.GetServer().GetDatabase(dbName);
         }
+
+        public UserStore(string connectionName, bool useMongoUrlFormat)
+        {
+            string connectionString = ConfigurationManager.ConnectionStrings[connectionName].ConnectionString;
+            if (useMongoUrlFormat)
+            {
+                MongoUrl url = new MongoUrl(connectionString);
+                db = GetDatabaseFromUrl(url);
+            }
+            else
+            {
+                db = GetDatabaseFromConnectionString(connectionString);
+            }
+        }
+
+
 
         public Task CreateAsync(TUser user)
         {

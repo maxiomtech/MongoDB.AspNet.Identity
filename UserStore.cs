@@ -11,42 +11,107 @@ using MongoDB.Driver.Builders;
 
 namespace MongoDB.AspNet.Identity
 {
+    /// <summary>
+    /// Class UserStore.
+    /// </summary>
+    /// <typeparam name="TUser">The type of the t user.</typeparam>
     public class UserStore<TUser> : IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
         IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>
         where TUser : IdentityUser
     {
 
         #region Private Methods & Variables
+        /// <summary>
+        /// The _disposed
+        /// </summary>
         private bool _disposed;
+        /// <summary>
+        /// The database
+        /// </summary>
         private MongoDatabase db;
+        /// <summary>
+        /// Gets the database from connection string.
+        /// </summary>
+        /// <param name="connectionString">The connection string.</param>
+        /// <returns>MongoDatabase.</returns>
+        /// <exception cref="System.Exception">No database name specified in connection string</exception>
         private MongoDatabase GetDatabaseFromConnectionString(string connectionString)
         {
             var conString = new MongoConnectionStringBuilder(connectionString);
             MongoClientSettings settings = MongoClientSettings.FromConnectionStringBuilder(conString);
             MongoServer server = new MongoClient(settings).GetServer();
+            if (conString.DatabaseName == null)
+            {
+                throw new Exception("No database name specified in connection string");
+            }
             return server.GetDatabase(conString.DatabaseName);
         }
 
+        /// <summary>
+        /// Gets the database from URL.
+        /// </summary>
+        /// <param name="url">The URL.</param>
+        /// <returns>MongoDatabase.</returns>
         private MongoDatabase GetDatabaseFromUrl(MongoUrl url)
         {
             var client = new MongoClient(url);
             var server = client.GetServer();
             return server.GetDatabase(url.DatabaseName); // WriteConcern defaulted to Acknowledged
         }
+
+        /// <summary>
+        /// Uses connectionString to connect to server and then uses databae name specified.
+        /// </summary>
+        /// <param name="connectionString">The connection string.</param>
+        /// <param name="dbName">Name of the database.</param>
+        /// <returns>MongoDatabase.</returns>
+        private MongoDatabase GetDatabase(string connectionString, string dbName)
+        {
+            MongoClient client = new MongoClient(connectionString);
+            MongoServer server = client.GetServer();
+            return server.GetDatabase(dbName);
+        }
         #endregion
 
 
-        public UserStore(string connectionName)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class. Uses name from ConfigurationManager or a mongodb:// string.
+        /// </summary>
+        /// <param name="connectionNameOrUrl">The connection name or URL.</param>
+        public UserStore(string connectionNameOrUrl)
         {
-            db = GetDatabaseFromConnectionString(ConfigurationManager.ConnectionStrings[connectionName].ConnectionString);
+            db = GetDatabaseFromConnectionString(connectionNameOrUrl.ToLower().StartsWith("mongodb://") ? 
+                connectionNameOrUrl : 
+                ConfigurationManager.ConnectionStrings[connectionNameOrUrl].ConnectionString);
         }
 
-        public UserStore(string connectionString, string dbName)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class. Uses name from ConfigurationManager or a mongodb://.
+        /// Database can be specified separately from connection server.
+        /// </summary>
+        /// <param name="connectionNameOrUrl">The connection name or URL.</param>
+        /// <param name="dbName">Name of the database.</param>
+        public UserStore(string connectionNameOrUrl, string dbName)
         {
-            var client = new MongoClient(ConfigurationManager.ConnectionStrings[connectionString].ConnectionString);
-            db = client.GetServer().GetDatabase(dbName);
+            if (connectionNameOrUrl.ToLower().StartsWith("mongodb://"))
+            {
+                db = GetDatabase(connectionNameOrUrl, dbName);
+            }
+            else
+            {
+                var client = new MongoClient(ConfigurationManager.ConnectionStrings[connectionNameOrUrl].ConnectionString);
+                db = client.GetServer().GetDatabase(dbName);
+            }
+            
         }
 
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class.
+        /// </summary>
+        /// <param name="connectionName">Name of the connection from ConfigurationManager.ConnectionStrings[].</param>
+        /// <param name="useMongoUrlFormat">if set to <c>true</c> [use mongo URL format].</param>
+        [Obsolete("Use UserStore(connectionNameOrUrl)")]
         public UserStore(string connectionName, bool useMongoUrlFormat)
         {
             string connectionString = ConfigurationManager.ConnectionStrings[connectionName].ConnectionString;
@@ -60,9 +125,14 @@ namespace MongoDB.AspNet.Identity
                 db = GetDatabaseFromConnectionString(connectionString);
             }
         }
+        
 
-
-
+        /// <summary>
+        /// Creates the user asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task CreateAsync(TUser user)
         {
             this.ThrowIfDisposed();
@@ -74,6 +144,12 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user);
         }
 
+        /// <summary>
+        /// Deletes the user asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task DeleteAsync(TUser user)
         {
             this.ThrowIfDisposed();
@@ -84,6 +160,11 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(true);
         }
 
+        /// <summary>
+        /// Finds the by identifier asynchronous.
+        /// </summary>
+        /// <param name="userId">The user identifier.</param>
+        /// <returns>Task{`0}.</returns>
         public Task<TUser> FindByIdAsync(string userId)
         {
             this.ThrowIfDisposed();
@@ -91,6 +172,11 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user);
         }
 
+        /// <summary>
+        /// Finds the by name asynchronous.
+        /// </summary>
+        /// <param name="userName">Name of the user.</param>
+        /// <returns>Task{`0}.</returns>
         public Task<TUser> FindByNameAsync(string userName)
         {
             this.ThrowIfDisposed();
@@ -98,6 +184,12 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user);
         }
 
+        /// <summary>
+        /// Updates the user asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task UpdateAsync(TUser user)
         {
             this.ThrowIfDisposed();
@@ -109,17 +201,31 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user);
         }
 
+        /// <summary>
+        /// Throws if disposed.
+        /// </summary>
+        /// <exception cref="System.ObjectDisposedException"></exception>
         private void ThrowIfDisposed()
         {
             if (this._disposed)
                 throw new ObjectDisposedException(this.GetType().Name);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             this._disposed = true;
         }
 
+        /// <summary>
+        /// Adds the login asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="login">The login.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task AddLoginAsync(TUser user, UserLoginInfo login)
         {
             this.ThrowIfDisposed();
@@ -134,6 +240,11 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(true);
         }
 
+        /// <summary>
+        /// Finds the user asynchronous.
+        /// </summary>
+        /// <param name="login">The login.</param>
+        /// <returns>Task{`0}.</returns>
         public Task<TUser> FindAsync(UserLoginInfo login)
         {
             TUser user = null;
@@ -145,6 +256,12 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user);
         }
 
+        /// <summary>
+        /// Gets the logins asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task{IList{UserLoginInfo}}.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user)
         {
             this.ThrowIfDisposed();
@@ -154,6 +271,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user.Logins.ToIList());
         }
 
+        /// <summary>
+        /// Removes the login asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="login">The login.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task RemoveLoginAsync(TUser user, UserLoginInfo login)
         {
             this.ThrowIfDisposed();
@@ -165,6 +289,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(0);
         }
 
+        /// <summary>
+        /// Adds the claim asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="claim">The claim.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task AddClaimAsync(TUser user, Claim claim)
         {
             this.ThrowIfDisposed();
@@ -184,6 +315,12 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(0);
         }
 
+        /// <summary>
+        /// Gets the claims asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task{IList{Claim}}.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task<IList<Claim>> GetClaimsAsync(TUser user)
         {
             this.ThrowIfDisposed();
@@ -194,6 +331,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(result);
         }
 
+        /// <summary>
+        /// Removes the claim asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="claim">The claim.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task RemoveClaimAsync(TUser user, Claim claim)
         {
             this.ThrowIfDisposed();
@@ -204,6 +348,12 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(0);
         }
 
+        /// <summary>
+        /// Gets the password hash asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task{System.String}.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task<string> GetPasswordHashAsync(TUser user)
         {
             this.ThrowIfDisposed();
@@ -213,6 +363,11 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user.PasswordHash);
         }
 
+        /// <summary>
+        /// Determines whether [has password asynchronous] [the specified user].
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task<bool> HasPasswordAsync(TUser user)
         {
             this.ThrowIfDisposed();
@@ -222,6 +377,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult<bool>(user.PasswordHash != null);
         }
 
+        /// <summary>
+        /// Sets the password hash asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="passwordHash">The password hash.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task SetPasswordHashAsync(TUser user, string passwordHash)
         {
             this.ThrowIfDisposed();
@@ -232,6 +394,12 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(0);
         }
 
+        /// <summary>
+        /// Gets the security stamp asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task{System.String}.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task<string> GetSecurityStampAsync(TUser user)
         {
             this.ThrowIfDisposed();
@@ -241,6 +409,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user.SecurityStamp);
         }
 
+        /// <summary>
+        /// Sets the security stamp asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="stamp">The stamp.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task SetSecurityStampAsync(TUser user, string stamp)
         {
             this.ThrowIfDisposed();
@@ -251,6 +426,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(0);
         }
 
+        /// <summary>
+        /// Adds to role asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="role">The role.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task AddToRoleAsync(TUser user, string role)
         {
             this.ThrowIfDisposed();
@@ -263,6 +445,12 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(true);
         }
 
+        /// <summary>
+        /// Gets the roles asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task{IList{System.String}}.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task<IList<string>> GetRolesAsync(TUser user)
         {
             this.ThrowIfDisposed();
@@ -272,6 +460,12 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult<IList<string>>(user.Roles);
         }
 
+        /// <summary>
+        /// Determines whether [is in role asynchronous] [the specified user].
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="role">The role.</param>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task<bool> IsInRoleAsync(TUser user, string role)
         {
             this.ThrowIfDisposed();
@@ -281,6 +475,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase));
         }
 
+        /// <summary>
+        /// Removes from role asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="role">The role.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task RemoveFromRoleAsync(TUser user, string role)
         {
             this.ThrowIfDisposed();

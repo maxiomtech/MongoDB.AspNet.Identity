@@ -73,6 +73,11 @@ namespace MongoDB.AspNet.Identity
         }
         #endregion
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class. Uses DefaultConnection name if none was specified.
+        /// </summary>
+        public UserStore() : this("DefaultConnection")
+        { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class. Uses name from ConfigurationManager or a mongodb:// string.

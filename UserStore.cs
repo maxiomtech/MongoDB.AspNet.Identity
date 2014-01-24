@@ -80,6 +80,8 @@ namespace MongoDB.AspNet.Identity
 
         #endregion
 
+        #region Constructors
+        
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserStore{TUser}" /> class. Uses DefaultConnection name if none was
         ///     specified.
@@ -133,8 +135,17 @@ namespace MongoDB.AspNet.Identity
             }
         }
 
-
         /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class using a already initialized Mongo Database.
+        /// </summary>
+        /// <param name="mongoDatabase">The mongo database.</param>
+        public UserStore(MongoDatabase mongoDatabase)
+        {
+            db = mongoDatabase;
+        }
+
+
+            /// <summary>
         ///     Initializes a new instance of the <see cref="UserStore{TUser}" /> class.
         /// </summary>
         /// <param name="connectionName">Name of the connection from ConfigurationManager.ConnectionStrings[].</param>
@@ -153,6 +164,10 @@ namespace MongoDB.AspNet.Identity
                 db = GetDatabaseFromSqlStyle(connectionString);
             }
         }
+
+        #endregion
+
+        #region Methods
 
         /// <summary>
         ///     Adds the claim asynchronous.
@@ -521,5 +536,8 @@ namespace MongoDB.AspNet.Identity
             if (_disposed)
                 throw new ObjectDisposedException(GetType().Name);
         }
+
+        #endregion
     }
 }
+        

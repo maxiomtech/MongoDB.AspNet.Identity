@@ -49,6 +49,39 @@ public AccountController()
 }
 ```
 
+## Connection Strings ##
+The UserStore has multiple constructors for handling connection strings. Here are some examples of the expected inputs and where the connection string should be located.
+
+### 1. SQL Style ###
+```C#
+UserStore(string connectionNameOrUrl)
+```
+<code>UserStore("Mongo")</code>
+
+**web.config**
+```xml
+<add name="Mongo" connectionString="Server=localhost:27017;Database={YourDataBase}" />
+```
+
+### 2. Mongo Style ###
+```C#
+UserStore(string connectionNameOrUrl)
+```
+<code>UserStore("Mongo")</code>
+
+**web.config**
+```xml
+<add name="Mongo" connectionString="mongodb://localhost/{YourDataBase}" />
+```
+
+**OR**
+
+```C#
+UserStore(string connectionNameOrUrl)
+```
+<code>UserStore("mongodb://localhost/{YourDataBase}")</code>
+
+
 ## Thanks To ##
 
 Special thanks to [David Boike](https://github.com/DavidBoike) whos [RavenDB AspNet Identity](https://github.com/ILMServices/RavenDB.AspNet.Identity) project gave me the base for jumpstarting the MongoDB provider

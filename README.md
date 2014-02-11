@@ -8,6 +8,9 @@ ASP.NET Identity provider that users MongoDB for storage
 ASP.NET MVC 5 shipped with a new Identity system (in the Microsoft.AspNet.Identity.Core package) in order to support both local login and remote logins via OpenID/OAuth, but only ships with an
 Entity Framework provider (Microsoft.AspNet.Identity.EntityFramework).
 
+## News ##
+__02-11-2014__ - [http://blogs.msdn.com/b/webdev/archive/2014/02/11/announcing-preview-of-microsoft-aspnet-identity-2-0-0-beta1.aspx](Microsoft has released Microsoft.AspNet.Identity v2 Beta 1). I will be addressing these issues and introducing them into the MongoDB.AspNet.Identity provider.
+
 ## Features ##
 * Drop-in replacement ASP.NET Identity with MongoDB as the backing store.
 * Requires only 1 mongo document type, while EntityFramework requires 5 tables

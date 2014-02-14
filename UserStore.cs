@@ -15,9 +15,13 @@ namespace MongoDB.AspNet.Identity
     ///     Class UserStore.
     /// </summary>
     /// <typeparam name="TUser">The type of the t user.</typeparam>
-    public class UserStore<TUser> : IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
-        IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>
-        where TUser : IdentityUser
+    public class UserStore<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim> : IUserLoginStore<TUser, TKey>, IUserClaimStore<TUser, TKey>, IUserRoleStore<TUser, TKey>, IUserPasswordStore<TUser, TKey>, IUserSecurityStampStore<TUser, TKey>, IQueryableUserStore<TUser, TKey>, IUserEmailStore<TUser, TKey>, IUserPhoneNumberStore<TUser, TKey>, IUserTwoFactorStore<TUser, TKey>, IUserStore<TUser, TKey>, IDisposable
+        where TUser : IdentityUser<TKey, TUserLogin, TUserRole, TUserClaim>
+        where TRole : IdentityRole<TKey, TUserRole>
+        where TKey : IEquatable<TKey>
+        where TUserLogin : IdentityUserLogin<TKey>, new()
+        where TUserRole : IdentityUserRole<TKey>, new()
+        where TUserClaim : IdentityUserClaim<TKey>, new()
     {
         #region Private Methods & Variables
 
@@ -267,6 +271,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(true);
         }
 
+        public Task<TUser> FindByIdAsync(TKey userId)
+        {
+            ThrowIfDisposed();
+            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
+            return Task.FromResult(user);
+        }
+
         /// <summary>
         ///     Finds the by identifier asynchronous.
         /// </summary>
@@ -290,6 +301,50 @@ namespace MongoDB.AspNet.Identity
             
             TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("UserName", userName)));
             return Task.FromResult(user);
+        }
+
+        public Task SetEmailConfirmedAsync(TUser user, bool confirmed)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Finds the by email asynchronous.
+        /// </summary>
+        /// <param name="email">The email.</param>
+        /// <returns>Task{`0}.</returns>
+        public Task<TUser> FindByEmailAsync(string email)
+        {
+            ThrowIfDisposed();
+
+            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("Email", email)));
+            return Task.FromResult(user);
+        }
+
+        public Task SetEmailAsync(TUser user, string email)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Gets the email asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task{System.String}.</returns>
+        /// <exception cref="System.ArgumentException">user</exception>
+        public Task<string> GetEmailAsync(TUser user)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentException("user");
+            }
+            return Task.FromResult<string>(user.Email);
+        }
+
+        public Task<bool> GetEmailConfirmedAsync(TUser user)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -544,6 +599,73 @@ namespace MongoDB.AspNet.Identity
         }
 
         #endregion
+
+        public IQueryable<TUser> Users { get; private set; }
+
+        public Task SetPhoneNumberAsync(TUser user, string phoneNumber)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentException("user");
+            }
+
+            user.PhoneNumber = phoneNumber;
+            return Task.FromResult<int>(0);
+        }
+
+        public Task<string> GetPhoneNumberAsync(TUser user)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException("user");
+            }
+            
+            return Task.FromResult<string>(user.PhoneNumber);
+        }
+
+        public Task<bool> GetPhoneNumberConfirmedAsync(TUser user)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException("user");
+            }
+            return Task.FromResult<bool>(user.PhoneNumberConfirmed);
+        }
+
+        public Task SetPhoneNumberConfirmedAsync(TUser user, bool confirmed)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException("user");
+            }
+            user.PhoneNumberConfirmed = confirmed;
+            return Task.FromResult<int>(0);
+        }
+
+        public Task SetTwoFactorEnabledAsync(TUser user, bool enabled)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException("user");
+            }
+            user.TwoFactorEnabled = enabled;
+            return Task.FromResult<int>(0);
+        }
+
+        public Task<bool> GetTwoFactorEnabledAsync(TUser user)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException("user");
+            }
+            return Task.FromResult<bool>(user.TwoFactorEnabled);
+        }
     }
 }
         

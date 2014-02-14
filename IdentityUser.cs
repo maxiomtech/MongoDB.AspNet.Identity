@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.AspNet.Identity;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -6,10 +7,30 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace MongoDB.AspNet.Identity
 {
+
+    public class IdentityUser : IdentityUser<string, IdentityUserLogin, IdentityUserRole, IdentityUserClaim>, IUser, IUser<string>
+    {
+        public IdentityUser()
+        {
+            this.Id = Guid.NewGuid().ToString();
+        }
+
+        public IdentityUser(string userName)
+            : this()
+        {
+            this.UserName = userName;
+        }
+    }
+
+
+
     /// <summary>
     /// Class IdentityUser.
     /// </summary>
-    public class IdentityUser : IUser
+    public class IdentityUser<TKey, TLogin, TRole, TClaim> : IUser<TKey>
+        where TLogin : IdentityUserLogin<TKey>
+        where TRole : IdentityUserRole<TKey>
+        where TClaim : IdentityUserClaim<TKey>
     {
         /// <summary>
         /// Unique key for the user
@@ -18,7 +39,7 @@ namespace MongoDB.AspNet.Identity
         /// <returns>The unique key for the user</returns>
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-	    public virtual string Id { get; set; }
+	    public virtual TKey Id { get; set; }
         /// <summary>
         /// Gets or sets the name of the user.
         /// </summary>
@@ -51,6 +72,36 @@ namespace MongoDB.AspNet.Identity
 		public virtual List<UserLoginInfo> Logins { get; private set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether [two factor enabled].
+        /// </summary>
+        /// <value><c>true</c> if [two factor enabled]; otherwise, <c>false</c>.</value>
+        public virtual bool TwoFactorEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the phone number.
+        /// </summary>
+        /// <value>The phone number.</value>
+        public virtual string PhoneNumber { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [phone number confirmed].
+        /// </summary>
+        /// <value><c>true</c> if [phone number confirmed]; otherwise, <c>false</c>.</value>
+        public virtual bool PhoneNumberConfirmed { get; set; }
+
+        /// <summary>
+        /// Gets or sets the email.
+        /// </summary>
+        /// <value>The email.</value>
+        public virtual string Email { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [email confirmed].
+        /// </summary>
+        /// <value><c>true</c> if [email confirmed]; otherwise, <c>false</c>.</value>
+        public virtual bool EmailConfirmed { get; set; }
+        
+        /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUser"/> class.
         /// </summary>
 		public IdentityUser()
@@ -70,33 +121,5 @@ namespace MongoDB.AspNet.Identity
 		}
 	}
 
-    /// <summary>
-    /// Class IdentityUserClaim.
-    /// </summary>
-	public class IdentityUserClaim
-	{
-        /// <summary>
-        /// Gets or sets the identifier.
-        /// </summary>
-        /// <value>The identifier.</value>
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public virtual string Id { get; set; }
-        /// <summary>
-        /// Gets or sets the user identifier.
-        /// </summary>
-        /// <value>The user identifier.</value>
-        public virtual string UserId { get; set; }
-        /// <summary>
-        /// Gets or sets the type of the claim.
-        /// </summary>
-        /// <value>The type of the claim.</value>
-        public virtual string ClaimType { get; set; }
-        /// <summary>
-        /// Gets or sets the claim value.
-        /// </summary>
-        /// <value>The claim value.</value>
-		public virtual string ClaimValue { get; set; }
-        
-	}
+    
 }

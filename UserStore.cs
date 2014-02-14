@@ -32,6 +32,11 @@ namespace MongoDB.AspNet.Identity
         private bool _disposed;
 
         /// <summary>
+        /// The AspNetUsers collection name
+        /// </summary>
+        private const string collectionName = "AspNetUsers";
+
+        /// <summary>
         ///     Gets the database from connection string.
         /// </summary>
         /// <param name="connectionString">The connection string.</param>
@@ -241,7 +246,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection<TUser>("AspNetUsers").Insert(user);
+            db.GetCollection<TUser>(collectionName).Insert(user);
 
             return Task.FromResult(user);
         }
@@ -258,7 +263,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection("AspNetUsers").Remove((Query.EQ("_id", ObjectId.Parse(user.Id))));
+            db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id))));
             return Task.FromResult(true);
         }
 
@@ -270,7 +275,7 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindByIdAsync(string userId)
         {
             ThrowIfDisposed();
-            TUser user = db.GetCollection<TUser>("AspNetUsers").FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
+            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
             return Task.FromResult(user);
         }
 
@@ -282,7 +287,8 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindByNameAsync(string userName)
         {
             ThrowIfDisposed();
-            TUser user = db.GetCollection<TUser>("AspNetUsers").FindOne((Query.EQ("UserName", userName)));
+            
+            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("UserName", userName)));
             return Task.FromResult(user);
         }
 
@@ -298,7 +304,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection<TUser>("AspNetUsers")
+            db.GetCollection<TUser>(collectionName)
                 .Update(Query.EQ("_id", ObjectId.Parse(user.Id)), Update.Replace(user), UpdateFlags.Upsert);
 
             return Task.FromResult(user);
@@ -342,7 +348,7 @@ namespace MongoDB.AspNet.Identity
         {
             TUser user = null;
             user =
-                db.GetCollection<TUser>("AspNetUsers")
+                db.GetCollection<TUser>(collectionName)
                     .FindOne(Query.And(Query.EQ("Logins.LoginProvider", login.LoginProvider),
                         Query.EQ("Logins.ProviderKey", login.ProviderKey)));
 

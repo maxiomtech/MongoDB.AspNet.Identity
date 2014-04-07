@@ -29,7 +29,7 @@ namespace MongoDB.AspNet.Identity
         /// Gets or sets the user identifier.
         /// </summary>
         /// <value>The user identifier.</value>
-        public virtual string UserId { get; set; }
+        public virtual TKey UserId { get; set; }
         /// <summary>
         /// Gets or sets the type of the claim.
         /// </summary>

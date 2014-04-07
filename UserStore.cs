@@ -267,14 +267,14 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id))));
+            db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id.ToString()))));
             return Task.FromResult(true);
         }
 
         public Task<TUser> FindByIdAsync(TKey userId)
         {
             ThrowIfDisposed();
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
+            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId.ToString()))));
             return Task.FromResult(user);
         }
 
@@ -359,8 +359,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection<TUser>(collectionName)
-                .Update(Query.EQ("_id", ObjectId.Parse(user.Id)), Update.Replace(user), UpdateFlags.Upsert);
+            db.GetCollection<TUser>(collectionName).Update(Query.EQ("_id", ObjectId.Parse(user.Id.ToString())), Update.Replace(user), UpdateFlags.Upsert);
 
             return Task.FromResult(user);
         }

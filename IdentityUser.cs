@@ -33,7 +33,7 @@ namespace MongoDB.AspNet.Identity
         where TClaim : IdentityUserClaim<TKey>
     {
         /// <summary>
-        /// Unique key for the user
+        /// Unique key for the user. TKey must be a string.
         /// </summary>
         /// <value>The identifier.</value>
         /// <returns>The unique key for the user</returns>
@@ -56,10 +56,17 @@ namespace MongoDB.AspNet.Identity
         /// <value>The security stamp.</value>
 		public virtual string SecurityStamp { get; set; }
         /// <summary>
-        /// Gets the roles.
+        /// Gets the roles. Extended from the AspNet IdentityUser entity to add a Role array to the users to follow a more Mongo document model style.
         /// </summary>
         /// <value>The roles.</value>
 		public virtual List<string> Roles { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the roles. Matches the AspNet IdentityUser entity signature. 
+        /// </summary>
+        /// <value>The roles.</value>
+        //public virtual ICollection<TRole> Roles { get; set; }
+
         /// <summary>
         /// Gets the claims.
         /// </summary>
@@ -100,6 +107,24 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         /// <value><c>true</c> if [email confirmed]; otherwise, <c>false</c>.</value>
         public virtual bool EmailConfirmed { get; set; }
+
+        /// <summary>
+        /// Gets or sets the access failed count.
+        /// </summary>
+        /// <value>The access failed count.</value>
+        public virtual int AccessFailedCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [lockout enabled].
+        /// </summary>
+        /// <value><c>true</c> if [lockout enabled]; otherwise, <c>false</c>.</value>
+        public virtual bool LockoutEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the lockout end date UTC.
+        /// </summary>
+        /// <value>The lockout end date UTC.</value>
+        public virtual DateTime? LockoutEndDateUtc { get; set; }
         
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUser"/> class.

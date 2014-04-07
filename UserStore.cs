@@ -12,9 +12,14 @@ using MongoDB.Driver.Builders;
 namespace MongoDB.AspNet.Identity
 {
     /// <summary>
-    ///     Class UserStore.
+    /// Class UserStore.
     /// </summary>
     /// <typeparam name="TUser">The type of the t user.</typeparam>
+    /// <typeparam name="TRole">The type of the t role.</typeparam>
+    /// <typeparam name="TKey">The type of the t key.</typeparam>
+    /// <typeparam name="TUserLogin">The type of the t user login.</typeparam>
+    /// <typeparam name="TUserRole">The type of the t user role.</typeparam>
+    /// <typeparam name="TUserClaim">The type of the t user claim.</typeparam>
     public class UserStore<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim> : IUserLoginStore<TUser, TKey>, IUserClaimStore<TUser, TKey>, IUserRoleStore<TUser, TKey>, IUserPasswordStore<TUser, TKey>, IUserSecurityStampStore<TUser, TKey>, IQueryableUserStore<TUser, TKey>, IUserEmailStore<TUser, TKey>, IUserPhoneNumberStore<TUser, TKey>, IUserTwoFactorStore<TUser, TKey>, IUserStore<TUser, TKey>, IDisposable
         where TUser : IdentityUser<TKey, TUserLogin, TUserRole, TUserClaim>
         where TRole : IdentityRole<TKey, TUserRole>
@@ -271,6 +276,11 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(true);
         }
 
+        /// <summary>
+        /// Finds the by identifier asynchronous.
+        /// </summary>
+        /// <param name="userId">The user identifier.</param>
+        /// <returns>Task{`0}.</returns>
         public Task<TUser> FindByIdAsync(TKey userId)
         {
             ThrowIfDisposed();
@@ -303,6 +313,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user);
         }
 
+        /// <summary>
+        /// Sets the email confirmed asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="confirmed">if set to <c>true</c> [confirmed].</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.NotImplementedException"></exception>
         public Task SetEmailConfirmedAsync(TUser user, bool confirmed)
         {
             throw new NotImplementedException();
@@ -321,6 +338,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user);
         }
 
+        /// <summary>
+        /// Sets the email asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="email">The email.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.NotImplementedException"></exception>
         public Task SetEmailAsync(TUser user, string email)
         {
             throw new NotImplementedException();
@@ -342,6 +366,12 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult<string>(user.Email);
         }
 
+        /// <summary>
+        /// Gets the email confirmed asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task{System.Boolean}.</returns>
+        /// <exception cref="System.NotImplementedException"></exception>
         public Task<bool> GetEmailConfirmedAsync(TUser user)
         {
             throw new NotImplementedException();
@@ -599,8 +629,19 @@ namespace MongoDB.AspNet.Identity
 
         #endregion
 
+        /// <summary>
+        /// Gets the users.
+        /// </summary>
+        /// <value>The users.</value>
         public IQueryable<TUser> Users { get; private set; }
 
+        /// <summary>
+        /// Sets the phone number asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="phoneNumber">The phone number.</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentException">user</exception>
         public Task SetPhoneNumberAsync(TUser user, string phoneNumber)
         {
             ThrowIfDisposed();
@@ -613,6 +654,12 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult<int>(0);
         }
 
+        /// <summary>
+        /// Gets the phone number asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task{System.String}.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task<string> GetPhoneNumberAsync(TUser user)
         {
             ThrowIfDisposed();
@@ -624,6 +671,12 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult<string>(user.PhoneNumber);
         }
 
+        /// <summary>
+        /// Gets the phone number confirmed asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task{System.Boolean}.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task<bool> GetPhoneNumberConfirmedAsync(TUser user)
         {
             ThrowIfDisposed();
@@ -634,6 +687,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult<bool>(user.PhoneNumberConfirmed);
         }
 
+        /// <summary>
+        /// Sets the phone number confirmed asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="confirmed">if set to <c>true</c> [confirmed].</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task SetPhoneNumberConfirmedAsync(TUser user, bool confirmed)
         {
             ThrowIfDisposed();
@@ -645,6 +705,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult<int>(0);
         }
 
+        /// <summary>
+        /// Sets the two factor enabled asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <param name="enabled">if set to <c>true</c> [enabled].</param>
+        /// <returns>Task.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task SetTwoFactorEnabledAsync(TUser user, bool enabled)
         {
             ThrowIfDisposed();
@@ -656,6 +723,12 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult<int>(0);
         }
 
+        /// <summary>
+        /// Gets the two factor enabled asynchronous.
+        /// </summary>
+        /// <param name="user">The user.</param>
+        /// <returns>Task{System.Boolean}.</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task<bool> GetTwoFactorEnabledAsync(TUser user)
         {
             ThrowIfDisposed();

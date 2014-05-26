@@ -8,21 +8,26 @@ using MongoDB.Bson.Serialization.Attributes;
 namespace MongoDB.AspNet.Identity
 {
 
+    /// <summary>
+    /// Class IdentityUser.
+    /// </summary>
     public class IdentityUser : IdentityUser<string, IdentityUserLogin, IdentityUserRole, IdentityUserClaim>, IUser, IUser<string>
     {
-        public IdentityUser()
-        {
-            this.Id = Guid.NewGuid().ToString();
-        }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityUser"/> class.
+        /// </summary>
+        public IdentityUser() {}
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityUser"/> class.
+        /// </summary>
+        /// <param name="userName">Name of the user.</param>
         public IdentityUser(string userName)
             : this()
         {
             this.UserName = userName;
         }
     }
-
-
 
     /// <summary>
     /// Class IdentityUser.
@@ -39,27 +44,31 @@ namespace MongoDB.AspNet.Identity
         /// <returns>The unique key for the user</returns>
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-	    public virtual TKey Id { get; set; }
+        public virtual TKey Id { get; set; }
+
         /// <summary>
         /// Gets or sets the name of the user.
         /// </summary>
         /// <value>The name of the user.</value>
-		public virtual string UserName { get; set; }
+        public virtual string UserName { get; set; }
+
         /// <summary>
         /// Gets or sets the password hash.
         /// </summary>
         /// <value>The password hash.</value>
-		public virtual string PasswordHash { get; set; }
+        public virtual string PasswordHash { get; set; }
+
         /// <summary>
         /// Gets or sets the security stamp.
         /// </summary>
         /// <value>The security stamp.</value>
-		public virtual string SecurityStamp { get; set; }
+        public virtual string SecurityStamp { get; set; }
+
         /// <summary>
         /// Gets the roles. Extended from the AspNet IdentityUser entity to add a Role array to the users to follow a more Mongo document model style.
         /// </summary>
         /// <value>The roles.</value>
-		public virtual List<string> Roles { get; private set; }
+        public virtual List<string> Roles { get; private set; }
 
         /// <summary>
         /// Gets or sets the roles. Matches the AspNet IdentityUser entity signature. 
@@ -71,12 +80,13 @@ namespace MongoDB.AspNet.Identity
         /// Gets the claims.
         /// </summary>
         /// <value>The claims.</value>
-		public virtual List<IdentityUserClaim> Claims { get; private set; }
+        public virtual List<IdentityUserClaim> Claims { get; private set; }
+
         /// <summary>
         /// Gets the logins.
         /// </summary>
         /// <value>The logins.</value>
-		public virtual List<UserLoginInfo> Logins { get; private set; }
+        public virtual List<UserLoginInfo> Logins { get; private set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether [two factor enabled].
@@ -125,26 +135,17 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         /// <value>The lockout end date UTC.</value>
         public virtual DateTime? LockoutEndDateUtc { get; set; }
-        
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityUser"/> class.
-        /// </summary>
-		public IdentityUser()
-		{
-			this.Claims = new List<IdentityUserClaim>();
-			this.Roles = new List<string>();
-			this.Logins = new List<UserLoginInfo>();
-		}
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUser"/> class.
         /// </summary>
-        /// <param name="userName">Name of the user.</param>
-		public IdentityUser(string userName) : this()
-		{
-			this.UserName = userName;
-		}
-	}
+        public IdentityUser()
+        {
+            //this.Id = Guid.NewGuid().ToString();
+            this.Claims = new List<IdentityUserClaim>();
+            this.Roles = new List<string>();
+            this.Logins = new List<UserLoginInfo>();
+        }
+    }
 
-    
 }

@@ -5,12 +5,27 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
+using MongoDB.AspNet.Identity;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 
 namespace MongoDB.AspNet.Identity
 {
+
+    public class UserStore<TUser> : UserStore<TUser, IdentityRole, string, IdentityUserLogin, IdentityUserRole, IdentityUserClaim>, IUserStore<TUser>, IUserStore<TUser, string>, IDisposable
+    where TUser : IdentityUser
+    {
+        public UserStore() : base() {} 
+        public UserStore(string connectionNameOrUrl) : base(connectionNameOrUrl) {}
+        public UserStore(string connectionNameOrUrl, string dbName) : base(connectionNameOrUrl,dbName) {}
+        public UserStore(MongoDatabase mongoDatabase) : base(mongoDatabase) { }
+        [Obsolete("Use UserStore(connectionNameOrUrl)")]
+        public UserStore(string connectionName, bool useMongoUrlFormat) : base(connectionName, useMongoUrlFormat) { }
+    }
+
+
+
     /// <summary>
     /// Class UserStore.
     /// </summary>

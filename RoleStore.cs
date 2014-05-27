@@ -17,13 +17,7 @@ namespace MongoDB.AspNet.Identity
     public class RoleStore<TRole> : RoleStore<TRole, string, IdentityUserRole>, IQueryableRoleStore<TRole>, IQueryableRoleStore<TRole, string>, IRoleStore<TRole, string>, IDisposable
     where TRole : IdentityRole, new()
     {
-        public RoleStore() 
-            
-        {
-            
-        }
-
-        
+        public RoleStore() : base(new IdentityDbContext().db) { }
     }
 
     public class RoleStore<TRole, TKey, TUserRole> : IQueryableRoleStore<TRole, TKey>, IRoleStore<TRole, TKey>, IDisposable
@@ -31,9 +25,16 @@ namespace MongoDB.AspNet.Identity
         where TUserRole : IdentityUserRole<TKey>, new()
     {
         private bool _disposed;
-
+        
         private readonly MongoDatabase db;
         private const string collectionName = "AspNetRoles";
+
+
+        public RoleStore(MongoDatabase context)
+        {
+            db = context;
+        }
+
         public bool DisposeContext
         {
             get;
@@ -44,7 +45,7 @@ namespace MongoDB.AspNet.Identity
         {
             get { return db.GetCollection<TRole>(collectionName).FindAll().AsQueryable(); }
         }
-        
+
 
         public virtual async Task CreateAsync(TRole role)
         {

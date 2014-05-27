@@ -65,6 +65,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IdentityDbContext.cs" />
     <Compile Include="IdentityRole.cs" />
     <Compile Include="IdentityUser.cs" />
     <Compile Include="IdentityUserClaim.cs" />
@@ -77,6 +78,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="App_LocalResources\IdentityResources.resx" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

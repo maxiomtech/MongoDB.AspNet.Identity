@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Configuration;
-using System.Data.Common;
-using System.Globalization;
 using System.Linq;
 using MongoDB.Driver;
 
@@ -29,7 +26,9 @@ namespace MongoDB.AspNet.Identity
         where TUserClaim : IdentityUserClaim<TKey>
     {
 
-        public readonly MongoDatabase db;
+        internal readonly MongoDatabase db;
+
+        public MongoDatabase Context { get { return db; } }
 
 
         /// <summary>

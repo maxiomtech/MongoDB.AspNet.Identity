@@ -11,10 +11,22 @@ using MongoDB.Driver.Builders;
 namespace MongoDB.AspNet.Identity
 {
 
+    /// <summary>
+    /// Class UserStore.
+    /// </summary>
+    /// <typeparam name="TUser">The type of the t user.</typeparam>
     public class UserStore<TUser> : UserStore<TUser, IdentityRole, string, IdentityUserLogin, IdentityUserRole, IdentityUserClaim>, IUserStore<TUser>, IUserStore<TUser, string>, IDisposable
     where TUser : IdentityUser
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class.
+        /// </summary>
+        /// <param name="context">The context.</param>
         public UserStore(IdentityDbContext context) : base(context.db) { }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class.
+        /// </summary>
+        /// <param name="db">The database.</param>
         public UserStore(MongoDatabase db) : base(db) { }
     }
 
@@ -61,8 +73,15 @@ namespace MongoDB.AspNet.Identity
 
         #region Constructors
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim}"/> class.
+        /// </summary>
         public UserStore(): this(new IdentityDbContext().db) {}
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim}"/> class.
+        /// </summary>
+        /// <param name="context">The context.</param>
         public UserStore(MongoDatabase context)
         {
             db = context;

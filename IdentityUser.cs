@@ -22,8 +22,7 @@ namespace MongoDB.AspNet.Identity
         /// Initializes a new instance of the <see cref="IdentityUser"/> class.
         /// </summary>
         /// <param name="userName">Name of the user.</param>
-        public IdentityUser(string userName)
-            : this()
+        public IdentityUser(string userName) : this()
         {
             this.UserName = userName;
         }

@@ -19,6 +19,26 @@ namespace MongoDB.AspNet.Identity
         IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>
         where TUser : IdentityUser
     {
+
+        #region Properties
+
+        /// <summary>
+        /// Get/Set the name of collection by default is AspNetUsers
+        /// </summary>
+        public string CollectionName 
+        {
+            get
+            {
+                return collectionName;
+            }
+            set
+            {
+                collectionName = value;
+            } 
+        }
+
+        #endregion
+
         #region Private Methods & Variables
 
         /// <summary>
@@ -32,9 +52,9 @@ namespace MongoDB.AspNet.Identity
         private bool _disposed;
 
         /// <summary>
-        /// The AspNetUsers collection name
+        /// The AspNetUsers collection name default
         /// </summary>
-        private const string collectionName = "AspNetUsers";
+        private string collectionName = "AspNetUsers";
 
         /// <summary>
         ///     Gets the database from connection string.

@@ -95,8 +95,8 @@ Simple use with MVC6 (not tested on Mono)
 
 Instrucitons
 
-1.create new MVC6 website in VisualStudio 2015 preview (current template does not have full featured Identity Example, it still works - use IdentitySample from aspnet/Identity repo)
-2.follow above instruction
+1. create new MVC6 website in VisualStudio 2015 preview (current template does not have full featured Identity Example, it still works - use IdentitySample from aspnet/Identity repo)
+2. follow above instruction
 3. fix 1.In ~/Models/IdentityModels.cs from above instruction
 4. no change to account controller
 5. comment/delete entityframework sql and wire up mongodb in startup.cs, use connectionstring in above format (no webconfig here, you can add local json configuration file in asp.net mvc)

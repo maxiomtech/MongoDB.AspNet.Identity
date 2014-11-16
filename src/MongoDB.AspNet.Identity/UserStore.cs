@@ -151,31 +151,31 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(result);
         }
 
-        //public Task ReplaceClaimAsync(TUser user, Claim claim, Claim newClaim, CancellationToken cancellationToken = default(CancellationToken))
-        //{
-        //    ThrowIfDisposed();
-        //    if (user == null)
-        //    {
-        //        throw new ArgumentNullException("user");
-        //    }
-        //    if (claim == null)
-        //    {
-        //        throw new ArgumentNullException("claim");
-        //    }
-        //    if (newClaim == null)
-        //    {
-        //        throw new ArgumentNullException("newClaim");
-        //    }
+        public Task ReplaceClaimAsync(TUser user, Claim claim, Claim newClaim, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException("user");
+            }
+            if (claim == null)
+            {
+                throw new ArgumentNullException("claim");
+            }
+            if (newClaim == null)
+            {
+                throw new ArgumentNullException("newClaim");
+            }
 
-        //    var matchedClaims = user.Claims.Where(uc => uc.ClaimValue == claim.Value && uc.ClaimType == claim.Type).ToList();
-        //    foreach (var matchedClaim in matchedClaims)
-        //    {
-        //        matchedClaim.ClaimValue = newClaim.Value;
-        //        matchedClaim.ClaimType = newClaim.Type;
-        //    }
+            var matchedClaims = user.Claims.Where(uc => uc.ClaimValue == claim.Value && uc.ClaimType == claim.Type).ToList();
+            foreach (var matchedClaim in matchedClaims)
+            {
+                matchedClaim.ClaimValue = newClaim.Value;
+                matchedClaim.ClaimType = newClaim.Type;
+            }
 
-        //    return Task.FromResult(0);
-        //}
+            return Task.FromResult(0);
+        }
 
 
         /// <summary>
@@ -233,7 +233,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id.ToString()))));            
+            db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id.ToString()))));
             return Task.FromResult(true);
         }
 
@@ -367,7 +367,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection<TUser>(collectionName).Update(Query.EQ("_id", ObjectId.Parse(user.Id.ToString())), Update.Replace(user), UpdateFlags.Upsert);            
+            db.GetCollection<TUser>(collectionName).Update(Query.EQ("_id", ObjectId.Parse(user.Id.ToString())), Update.Replace(user), UpdateFlags.Upsert);
             return Task.FromResult(user);
         }
 

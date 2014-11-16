@@ -36,16 +36,6 @@ namespace MongoDB.AspNet.Identity
         private readonly MongoDatabase db;
         private const string collectionName = "AspNetRoles";
 
-        //public RoleStore( IdentityDbContext dbContext)
-        //{
-        //    this.dbContext = dbContext;
-        //    db = dbContext.db;
-        //}
-
-        public RoleStore()
-        {
-
-        }
         public RoleStore(IdentityDbContext context)
         {
             db = context.Database;
@@ -68,7 +58,7 @@ namespace MongoDB.AspNet.Identity
         }
 
 
-        public virtual async Task CreateAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual Task CreateAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.ThrowIfDisposed();
             if (role == null)
@@ -77,10 +67,10 @@ namespace MongoDB.AspNet.Identity
             }
 
             db.GetCollection<TRole>(collectionName).Insert(role);
-
+            return Task.FromResult(0);
         }
 
-        public virtual async Task DeleteAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual Task DeleteAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.ThrowIfDisposed();
             if (role == null)
@@ -89,6 +79,8 @@ namespace MongoDB.AspNet.Identity
             }
 
             db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(role.Id.ToString()))));
+
+            return Task.FromResult(0);
         }
 
         public void Dispose()
@@ -105,14 +97,16 @@ namespace MongoDB.AspNet.Identity
         public Task<TRole> FindByIdAsync(TKey roleId, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.ThrowIfDisposed();
-            TRole role = db.GetCollection<TRole>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(roleId.ToString()))));
+            //TRole role = db.GetCollection<TRole>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(roleId.ToString()))));
+            TRole role = Roles.FirstOrDefault(i => i.Id.Equals(roleId));
             return Task.FromResult(role);
         }
 
         public Task<TRole> FindByNameAsync(string roleName, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.ThrowIfDisposed();
-            TRole role = db.GetCollection<TRole>(collectionName).FindOne((Query.EQ("Name", roleName)));
+            //TRole role = db.GetCollection<TRole>(collectionName).FindOne((Query.EQ("Name", roleName)));
+            TRole role = Roles.FirstOrDefault(i => i.Name.Equals(roleName));
             return Task.FromResult(role);
         }
 
@@ -124,7 +118,7 @@ namespace MongoDB.AspNet.Identity
             }
         }
 
-        public virtual async Task UpdateAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual Task UpdateAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.ThrowIfDisposed();
             if (role == null)
@@ -134,7 +128,7 @@ namespace MongoDB.AspNet.Identity
 
             db.GetCollection<TRole>(collectionName).Update(Query.EQ("_id", ObjectId.Parse(role.Id.ToString())), Update.Replace(role), UpdateFlags.Upsert);
 
-
+            return Task.FromResult(0);
         }
 
         public Task<string> GetRoleIdAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
@@ -179,7 +173,8 @@ namespace MongoDB.AspNet.Identity
             {
                 throw new ArgumentNullException("roleId");
             }
-            TRole role = db.GetCollection<TRole>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(roleId))));
+            //TRole role = db.GetCollection<TRole>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(roleId))));
+            TRole role = Roles.FirstOrDefault(i => i.Id.Equals(roleId));
             return Task.FromResult(role);
         }
 

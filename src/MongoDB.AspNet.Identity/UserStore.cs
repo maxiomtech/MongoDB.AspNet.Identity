@@ -17,29 +17,20 @@ namespace MongoDB.AspNet.Identity
     /// Class UserStore.
     /// </summary>
     /// <typeparam name="TUser">The type of the t user.</typeparam>
-    public class UserStore<TUser> : UserStore<TUser, IdentityRole, string, IdentityUserLogin, IdentityUserRole,IdentityDbContext>, IDisposable
+    public class UserStore<TUser> : UserStore<TUser, IdentityRole, string, IdentityUserLogin, IdentityUserRole, IdentityDbContext>, IDisposable
     where TUser : IdentityUser
 
 
     {
-        ///// <summary>
-        ///// Initializes a new instance of the <see cref="UserStore{TUser}"/> class.
-        ///// </summary>
-        ///// <param name="context">The context.</param>
-        //public UserStore(IdentityDbContext context) : base(context.db) { }
-        ///// <summary>
-        ///// Initializes a new instance of the <see cref="UserStore{TUser}"/> class.
-        ///// </summary>
-        ///// <param name="db">The database.</param>
-        //public UserStore(MongoDatabase db) : base(db) { }
-
-        public UserStore(IdentityDbContext context) :base(context)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class.
+        /// <param name="context">The context.</param>
+        /// </summary>
+        public UserStore(IdentityDbContext context) : base(context)
         {
 
         }
     }
-
-
 
     /// <summary>
     /// Class UserStore.
@@ -49,6 +40,8 @@ namespace MongoDB.AspNet.Identity
     /// <typeparam name="TKey">The type of the t key.</typeparam>
     /// <typeparam name="TUserLogin">The type of the t user login.</typeparam>
     /// <typeparam name="TUserRole">The type of the t user role.</typeparam>
+    /// <typeparam name="TContext">context to access database</typeparam>
+
     public class UserStore<TUser, TRole, TKey, TUserLogin, TUserRole, TContext> :
 
         IUserLoginStore<TUser>,
@@ -64,14 +57,11 @@ namespace MongoDB.AspNet.Identity
         where TKey : IEquatable<TKey>
         where TUser : IdentityUser<TKey>
         where TRole : IdentityRole<TKey>
-        where TContext : IdentityDbContext//<TUser, TRole, TKey>
+        where TContext : IdentityDbContext
         where TUserLogin : IdentityUserLogin<TKey>, new()
         where TUserRole : IdentityUserRole<TKey>, new()
-        //where TUserClaim : IdentityUserClaim<TKey>, new()
-
     {
         #region Private Methods & Variables
-
 
 
         /// <summary>
@@ -89,6 +79,18 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         private const string collectionName = "AspNetUsers";
 
+        /// <summary>
+        /// Gets the users.
+        /// </summary>
+        /// <value>The users.</value>
+        public IQueryable<TUser> Users
+        {
+            get
+            {
+                return db.GetCollection<TUser>(collectionName).FindAll().AsQueryable();
+            }
+        }
+
 
         #endregion
 
@@ -97,17 +99,7 @@ namespace MongoDB.AspNet.Identity
         /// <summary>
         /// Initializes a new instance of the <see cref="UserStore{TUser, TRole, TKey, TUserLogin, TUserRole}"/> class.
         /// </summary>
-        //public UserStore() : this(new IdentityDbContext().db) { }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UserStore{TUser, TRole, TKey, TUserLogin, TUserRole}"/> class.
-        /// </summary>
         /// <param name="context">The context.</param>
-        //public UserStore(MongoDatabase context)
-        //{
-        //    db = context;
-        //}
-
         public UserStore(TContext context)
         {
             db = context.Database;
@@ -241,7 +233,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id.ToString()))));
+            db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id.ToString()))));            
             return Task.FromResult(true);
         }
 
@@ -253,7 +245,8 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindByIdAsync(TKey userId, CancellationToken cancellationToken = default(CancellationToken))
         {
             ThrowIfDisposed();
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId.ToString()))));
+            //TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId.ToString()))));
+            TUser user = Users.FirstOrDefault(i => i.Id.Equals(userId));
             return Task.FromResult(user);
         }
 
@@ -265,7 +258,8 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindByIdAsync(string userId, CancellationToken cancellationToken = default(CancellationToken))
         {
             ThrowIfDisposed();
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
+            //TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
+            TUser user = Users.FirstOrDefault(i => i.Id.Equals(userId));
             return Task.FromResult(user);
         }
 
@@ -278,7 +272,8 @@ namespace MongoDB.AspNet.Identity
         {
             ThrowIfDisposed();
 
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("NormalizedUserName", normalizedUserName)));
+            //TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("NormalizedUserName", normalizedUserName)));
+            TUser user = Users.AsQueryable().FirstOrDefault(n => n.NormalizedUserName.Equals(normalizedUserName));
             return Task.FromResult(user);
         }
 
@@ -288,7 +283,7 @@ namespace MongoDB.AspNet.Identity
         /// <param name="user">The user.</param>
         /// <param name="confirmed">if set to <c>true</c> [confirmed].</param>
         /// <returns>Task.</returns>
-        
+
         public Task SetEmailConfirmedAsync(TUser user, bool confirmed, CancellationToken cancellationToken = default(CancellationToken))
         {
             ThrowIfDisposed();
@@ -306,7 +301,8 @@ namespace MongoDB.AspNet.Identity
         {
             ThrowIfDisposed();
 
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("Email", email)));
+            //TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("Email", email)));
+            TUser user = Users.AsQueryable().FirstOrDefault(x => x.Email.Equals(email));
             return Task.FromResult(user);
         }
 
@@ -348,7 +344,7 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         /// <param name="user">The user.</param>
         /// <returns>Task{System.Boolean}.</returns>
-        
+
         public Task<bool> GetEmailConfirmedAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
         {
             ThrowIfDisposed();
@@ -371,8 +367,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection<TUser>(collectionName).Update(Query.EQ("_id", ObjectId.Parse(user.Id.ToString())), Update.Replace(user), UpdateFlags.Upsert);
-
+            db.GetCollection<TUser>(collectionName).Update(Query.EQ("_id", ObjectId.Parse(user.Id.ToString())), Update.Replace(user), UpdateFlags.Upsert);            
             return Task.FromResult(user);
         }
 
@@ -403,22 +398,6 @@ namespace MongoDB.AspNet.Identity
             }
 
             return Task.FromResult(true);
-        }
-
-        /// <summary>
-        ///     Finds the user asynchronous.
-        /// </summary>
-        /// <param name="login">The login.</param>
-        /// <returns>Task{`0}.</returns>
-        public Task<TUser> FindAsync(UserLoginInfo login, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            TUser user = null;
-            user =
-                db.GetCollection<TUser>(collectionName)
-                    .FindOne(Query.And(Query.EQ("Logins.LoginProvider", login.LoginProvider),
-                        Query.EQ("Logins.ProviderKey", login.ProviderKey)));
-
-            return Task.FromResult(user);
         }
 
         /// <summary>
@@ -609,24 +588,6 @@ namespace MongoDB.AspNet.Identity
         }
 
         /// <summary>
-        ///     Throws if disposed.
-        /// </summary>
-        /// <exception cref="System.ObjectDisposedException"></exception>
-        private void ThrowIfDisposed()
-        {
-            if (_disposed)
-                throw new ObjectDisposedException(GetType().Name);
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Gets the users.
-        /// </summary>
-        /// <value>The users.</value>
-        public IQueryable<TUser> Users { get; private set; }
-
-        /// <summary>
         /// Sets the phone number asynchronous.
         /// </summary>
         /// <param name="user">The user.</param>
@@ -735,9 +696,10 @@ namespace MongoDB.AspNet.Identity
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
             // todo: ensure logins loaded
-            var xu = db.GetCollection<TUser>(collectionName).AsQueryable().FirstOrDefault(x => x.Logins.Any(l => l.LoginProvider == loginProvider && l.ProviderKey == providerKey));
-            var user = db.GetCollection<TUser>(collectionName).FindOne((Query.And(Query.EQ("Logins.LoginProvider", loginProvider), Query.EQ("Logins.ProviderKey", providerKey))));
-            
+
+            //var user = db.GetCollection<TUser>(collectionName).FindOne((Query.And(Query.EQ("Logins.LoginProvider", loginProvider), Query.EQ("Logins.ProviderKey", providerKey))));
+            var user = Users.AsQueryable().FirstOrDefault(x => x.Logins.Any(l => l.LoginProvider == loginProvider && l.ProviderKey == providerKey));
+
             return Task.FromResult<TUser>(user);
         }
 
@@ -749,7 +711,7 @@ namespace MongoDB.AspNet.Identity
             {
                 throw new ArgumentNullException("user");
             }
-            return Task.FromResult(user.Id!=null? user.Id.ToString() :null);
+            return Task.FromResult(user.Id != null ? user.Id.ToString() : null);
         }
 
         public Task<string> GetUserNameAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
@@ -924,5 +886,21 @@ namespace MongoDB.AspNet.Identity
             user.LockoutEnabled = enabled;
             return Task.FromResult(0);
         }
+
+
+
+        /// <summary>
+        ///     Throws if disposed.
+        /// </summary>
+        /// <exception cref="System.ObjectDisposedException"></exception>
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(GetType().Name);
+        }
+
+        #endregion
+
+
     }
 }

@@ -1,0 +1,14 @@
+{
+    "version": "1.0.0-*",
+    "dependencies": {
+        "Microsoft.AspNet.Identity": "3.0.0-beta1",
+        "mongocsharpdriver": "1.10.0.0-rc0"
+
+    },
+    "frameworks": {
+        "aspnet50": {
+            "dependencies": {
+            }
+        }
+    }
+}

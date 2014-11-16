@@ -11,12 +11,15 @@ namespace MongoDB.AspNet.Identity
     /// <summary>
     /// Class IdentityUser.
     /// </summary>
-    public class IdentityUser : IdentityUser<string, IdentityUserLogin, IdentityUserRole, IdentityUserClaim>, IUser, IUser<string>
+    public class IdentityUser : IdentityUser<string>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUser"/> class.
         /// </summary>
-        public IdentityUser() {}
+        public IdentityUser()
+        {
+
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUser"/> class.
@@ -31,10 +34,7 @@ namespace MongoDB.AspNet.Identity
     /// <summary>
     /// Class IdentityUser.
     /// </summary>
-    public class IdentityUser<TKey, TLogin, TRole, TClaim> : IUser<TKey>
-        where TLogin : IdentityUserLogin<TKey>
-        where TRole : IdentityUserRole<TKey>
-        where TClaim : IdentityUserClaim<TKey>
+    public class IdentityUser<TKey> where TKey : IEquatable<TKey>
     {
         /// <summary>
         /// Unique key for the user. TKey must be a string.
@@ -50,6 +50,12 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         /// <value>The name of the user.</value>
         public virtual string UserName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the normalized name of the user.
+        /// </summary>
+        /// <value>The normalized name of the user.</value>
+        public virtual string NormalizedUserName { get; set; }
 
         /// <summary>
         /// Gets or sets the password hash.
@@ -130,10 +136,9 @@ namespace MongoDB.AspNet.Identity
         public virtual bool LockoutEnabled { get; set; }
 
         /// <summary>
-        /// Gets or sets the lockout end date UTC.
+        ///  DateTime in UTC when lockout ends, any time in the past is considered not locked out.
         /// </summary>
-        /// <value>The lockout end date UTC.</value>
-        public virtual DateTime? LockoutEndDateUtc { get; set; }
+        public virtual DateTimeOffset LockoutEnd { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUser"/> class.

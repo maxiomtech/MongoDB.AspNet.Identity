@@ -5,31 +5,34 @@ using MongoDB.Driver;
 
 namespace MongoDB.AspNet.Identity
 {
-    public class IdentityDbContext<TUser> : IdentityDbContext<TUser, IdentityRole, string, IdentityUserLogin, IdentityUserRole, IdentityUserClaim>
-    where TUser : IdentityUser
+    public class IdentityDbContext : IdentityDbContext<IdentityUser>//IdentityDbContext<IdentityUser, IdentityRole, string, IdentityUserLogin, IdentityUserRole, IdentityUserClaim>
+
     {
-        public IdentityDbContext() : this("DefaultConnection") { }
-        public IdentityDbContext(string nameOrConnectionString) : base(nameOrConnectionString) { }
+        public IdentityDbContext() : base() { } //: this("DefaultConnection") { }
+        //public IdentityDbContext(string nameOrConnectionString) : base(nameOrConnectionString) { }
     }
 
-    public class IdentityDbContext : IdentityDbContext<IdentityUser, IdentityRole, string, IdentityUserLogin, IdentityUserRole, IdentityUserClaim>
+    public class IdentityDbContext<TUser> : IdentityDbContext<TUser, IdentityRole, string>//IdentityDbContext<TUser, IdentityRole, string, IdentityUserLogin, IdentityUserRole, IdentityUserClaim>
+where TUser : IdentityUser
     {
-        public IdentityDbContext() : this("DefaultConnection") { }
-        public IdentityDbContext(string nameOrConnectionString) : base(nameOrConnectionString) { }
+        public IdentityDbContext() : base() { } //: this("DefaultConnection") { }
+        //public IdentityDbContext(string nameOrConnectionString) : base(nameOrConnectionString) { }
     }
 
-    public class IdentityDbContext<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim> : IDisposable
-        where TUser : IdentityUser<TKey, TUserLogin, TUserRole, TUserClaim>
-        where TRole : IdentityRole<TKey, TUserRole>
-        where TUserLogin : IdentityUserLogin<TKey>
-        where TUserRole : IdentityUserRole<TKey>
-        where TUserClaim : IdentityUserClaim<TKey>
+    public class IdentityDbContext<TUser, TRole, TKey>  : IDisposable
+        where TKey : IEquatable<TKey>
+        where TUser : IdentityUser<TKey>
+        where TRole : IdentityRole<TKey>
+        //where TUserLogin : IdentityUserLogin<TKey>
+        //where TUserRole : IdentityUserRole<TKey>
+        //where TUserClaim : IdentityUserClaim<TKey>
     {
 
-        internal readonly MongoDatabase db;
+        private MongoDatabase db;
 
-        public MongoDatabase Context { get { return db; } }
+        public MongoDatabase Database { get { return db ?? GetDatabase(); } }
 
+        public string ConnectionString { get; set; }
 
         /// <summary>
         ///     Gets the database from connection string.
@@ -78,6 +81,34 @@ namespace MongoDB.AspNet.Identity
             return server.GetDatabase(dbName);
         }
 
+        private MongoDatabase GetDatabase()
+        {
+            if (string.IsNullOrEmpty(ConnectionString))
+                throw new InvalidOperationException("connection string not provided");
+
+            if (ConnectionString.ToLower().StartsWith("mongodb://"))
+            {
+                db = GetDatabaseFromUrl(new MongoUrl(ConnectionString));
+            }
+            else
+            {
+                db = GetDatabaseFromSqlStyle(ConnectionString);
+                ////todo change this to configuration string
+                //string connStringFromManager = "Server=localhost:27017;Database=aspnet";
+                ////ConfigurationManager.ConnectionStrings[nameOrConnectionString].ConnectionString;
+                //if (connStringFromManager.ToLower().StartsWith("mongodb://"))
+                //{
+                //    db = GetDatabaseFromUrl(new MongoUrl(connStringFromManager));
+                //}
+                //else
+                //{
+                //    db = GetDatabaseFromSqlStyle(ConnectionString);
+                //}
+            }
+
+            return db;
+        }
+
         public bool RequireUniqueEmail
         {
             get;
@@ -96,30 +127,16 @@ namespace MongoDB.AspNet.Identity
             set;
         }
 
-        public IdentityDbContext() : this("DefaultConnection") { }
-        public IdentityDbContext(string nameOrConnectionString)
-        {
-            if (nameOrConnectionString.ToLower().StartsWith("mongodb://"))
-            {
-                db = GetDatabaseFromUrl(new MongoUrl(nameOrConnectionString));
-            }
-            else
-            {
-                string connStringFromManager =
-                    ConfigurationManager.ConnectionStrings[nameOrConnectionString].ConnectionString;
-                if (connStringFromManager.ToLower().StartsWith("mongodb://"))
-                {
-                    db = GetDatabaseFromUrl(new MongoUrl(connStringFromManager));
-                }
-                else
-                {
-                    db = GetDatabaseFromSqlStyle(connStringFromManager);
-                }
-            }
-        }
+        public IdentityDbContext()//: this("DefaultConnection") { }
+        { }
+        //public IdentityDbContext(string nameOrConnectionString)
+        //{
+
+        //}
 
         public void Dispose()
         {
+            //Database.Settings.
         }
     }
 }

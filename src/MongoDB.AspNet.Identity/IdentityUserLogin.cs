@@ -1,4 +1,6 @@
-﻿namespace MongoDB.AspNet.Identity
+﻿using System;
+
+namespace MongoDB.AspNet.Identity
 {
     public class IdentityUserLogin : IdentityUserLogin<string>
     {
@@ -7,7 +9,7 @@
         }
     }
 
-    public class IdentityUserLogin<TKey>
+    public class IdentityUserLogin<TKey> where TKey : IEquatable<TKey>
     {
         public virtual string LoginProvider
         {

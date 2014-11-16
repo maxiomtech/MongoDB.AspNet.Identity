@@ -1,4 +1,6 @@
-﻿namespace MongoDB.AspNet.Identity
+﻿using System;
+
+namespace MongoDB.AspNet.Identity
 {
 
 
@@ -9,7 +11,7 @@
         }
     }
 
-    public class IdentityUserRole<TKey>
+    public class IdentityUserRole<TKey> where TKey : IEquatable<TKey>
     {
         public virtual TKey RoleId
         {

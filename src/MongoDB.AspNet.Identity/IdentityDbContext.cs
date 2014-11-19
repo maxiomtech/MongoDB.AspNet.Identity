@@ -33,6 +33,8 @@ where TUser : IdentityUser
         public MongoDatabase Database { get { return db ?? GetDatabase(); } }
 
         public string ConnectionString { get; set; }
+        
+        public string DatabaseName { get; set; }
 
         /// <summary>
         ///     Gets the database from connection string.
@@ -86,7 +88,11 @@ where TUser : IdentityUser
             if (string.IsNullOrEmpty(ConnectionString))
                 throw new InvalidOperationException("connection string not provided");
 
-            if (ConnectionString.ToLower().StartsWith("mongodb://"))
+            if (!String.IsNullOrEmpty(DatabaseName))
+            {
+                db = GetDatabase(ConnectionString, DatabaseName);
+            }
+            else if (ConnectionString.ToLower().StartsWith("mongodb://"))
             {
                 db = GetDatabaseFromUrl(new MongoUrl(ConnectionString));
             }

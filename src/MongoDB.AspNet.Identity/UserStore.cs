@@ -87,7 +87,7 @@ namespace MongoDB.AspNet.Identity
         {
             get
             {
-                return db.GetCollection<TUser>(collectionName).FindAll().AsQueryable();
+                return db.GetCollection<TUser>(collectionName).AsQueryable();
             }
         }
 

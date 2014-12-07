@@ -23,11 +23,25 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         /// <param name="context">The context.</param>
         public UserStore(IdentityDbContext context) : base(context.db) { }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class.
         /// </summary>
         /// <param name="db">The database.</param>
         public UserStore(MongoDatabase db) : base(db) { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class.
+        /// </summary>
+        /// <param name="db">The database.</param>
+        /// <param name="collectionName">The user collection name</param>
+        public UserStore(MongoDatabase db, string collectionName) : base(db, collectionName) { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class.
+        /// </summary>
+        /// <param name="userCollection">The user collection</param>
+        public UserStore(MongoCollection<TUser> userCollection) : base(userCollection) { }
     }
 
 
@@ -51,12 +65,10 @@ namespace MongoDB.AspNet.Identity
     {
         #region Private Methods & Variables
 
-
-
         /// <summary>
-        ///     The database
+        /// The user collection
         /// </summary>
-        private readonly MongoDatabase db;
+        private readonly MongoCollection<TUser> userCollection;
 
         /// <summary>
         ///     The _disposed
@@ -76,15 +88,25 @@ namespace MongoDB.AspNet.Identity
         /// <summary>
         /// Initializes a new instance of the <see cref="UserStore{TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim}"/> class.
         /// </summary>
-        public UserStore(): this(new IdentityDbContext().db) {}
+        public UserStore() : this(new IdentityDbContext().db) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserStore{TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim}"/> class.
         /// </summary>
         /// <param name="context">The context.</param>
-        public UserStore(MongoDatabase context)
+        /// <param name="collectionName">The user collection name</param>
+        public UserStore(MongoDatabase context, string collectionName = collectionName)
         {
-            db = context;
+            userCollection = context.GetCollection<TUser>(collectionName);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim}"/> class.
+        /// </summary>
+        /// <param name="userCollection">The user collection</param>
+        public UserStore(MongoCollection<TUser> userCollection)
+        {
+            this.userCollection = userCollection;
         }
 
 
@@ -164,7 +186,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection<TUser>(collectionName).Insert(user);
+            userCollection.Insert(user);
 
             return Task.FromResult(user);
         }
@@ -181,7 +203,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id.ToString()))));
+            userCollection.Remove((Query.EQ("_id", ObjectId.Parse(user.Id.ToString()))));
             return Task.FromResult(true);
         }
 
@@ -193,7 +215,7 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindByIdAsync(TKey userId)
         {
             ThrowIfDisposed();
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId.ToString()))));
+            TUser user = userCollection.FindOne((Query.EQ("_id", ObjectId.Parse(userId.ToString()))));
             return Task.FromResult(user);
         }
 
@@ -205,7 +227,7 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindByIdAsync(string userId)
         {
             ThrowIfDisposed();
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
+            TUser user = userCollection.FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
             return Task.FromResult(user);
         }
 
@@ -217,8 +239,8 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindByNameAsync(string userName)
         {
             ThrowIfDisposed();
-            
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("UserName", userName)));
+
+            TUser user = userCollection.FindOne((Query.EQ("UserName", userName)));
             return Task.FromResult(user);
         }
 
@@ -228,10 +250,15 @@ namespace MongoDB.AspNet.Identity
         /// <param name="user">The user.</param>
         /// <param name="confirmed">if set to <c>true</c> [confirmed].</param>
         /// <returns>Task.</returns>
-        /// <exception cref="System.NotImplementedException"></exception>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task SetEmailConfirmedAsync(TUser user, bool confirmed)
         {
-            throw new NotImplementedException();
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            user.EmailConfirmed = confirmed;
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -243,7 +270,7 @@ namespace MongoDB.AspNet.Identity
         {
             ThrowIfDisposed();
 
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("Email", email)));
+            TUser user = userCollection.FindOne((Query.EQ("Email", email)));
             return Task.FromResult(user);
         }
 
@@ -253,10 +280,15 @@ namespace MongoDB.AspNet.Identity
         /// <param name="user">The user.</param>
         /// <param name="email">The email.</param>
         /// <returns>Task.</returns>
-        /// <exception cref="System.NotImplementedException"></exception>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task SetEmailAsync(TUser user, string email)
         {
-            throw new NotImplementedException();
+            ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            user.Email = email;
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -272,7 +304,7 @@ namespace MongoDB.AspNet.Identity
             {
                 throw new ArgumentException("user");
             }
-            return Task.FromResult<string>(user.Email);
+            return Task.FromResult(user.Email);
         }
 
         /// <summary>
@@ -280,10 +312,13 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         /// <param name="user">The user.</param>
         /// <returns>Task{System.Boolean}.</returns>
-        /// <exception cref="System.NotImplementedException"></exception>
+        /// <exception cref="System.ArgumentNullException">user</exception>
         public Task<bool> GetEmailConfirmedAsync(TUser user)
         {
-            throw new NotImplementedException();
+            this.ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+            return Task.FromResult(user.EmailConfirmed);
         }
 
         /// <summary>
@@ -298,7 +333,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection<TUser>(collectionName).Update(Query.EQ("_id", ObjectId.Parse(user.Id.ToString())), Update.Replace(user), UpdateFlags.Upsert);
+            userCollection.Update(Query.EQ("_id", ObjectId.Parse(user.Id.ToString())), Update.Replace(user), UpdateFlags.Upsert);
 
             return Task.FromResult(user);
         }
@@ -340,10 +375,7 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindAsync(UserLoginInfo login)
         {
             TUser user = null;
-            user =
-                db.GetCollection<TUser>(collectionName)
-                    .FindOne(Query.And(Query.EQ("Logins.LoginProvider", login.LoginProvider),
-                        Query.EQ("Logins.ProviderKey", login.ProviderKey)));
+            user = userCollection.FindOne(Query.And(Query.EQ("Logins.LoginProvider", login.LoginProvider), Query.EQ("Logins.ProviderKey", login.ProviderKey)));
 
             return Task.FromResult(user);
         }
@@ -576,7 +608,7 @@ namespace MongoDB.AspNet.Identity
             {
                 throw new ArgumentNullException("user");
             }
-            
+
             return Task.FromResult<string>(user.PhoneNumber);
         }
 
@@ -649,4 +681,3 @@ namespace MongoDB.AspNet.Identity
         }
     }
 }
-        

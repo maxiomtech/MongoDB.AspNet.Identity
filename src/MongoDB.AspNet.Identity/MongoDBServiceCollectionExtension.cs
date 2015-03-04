@@ -25,8 +25,7 @@ namespace MongoDB.AspNet.Identity
 
             services.AddScoped<IRoleStore<IdentityRole>, RoleStore<IdentityRole>>();
             services.AddScoped<IUserStore<TUser>, UserStore<TUser>>();
-
-            services.AddDefaultIdentity<TUser, MongoDB.AspNet.Identity.IdentityRole>();
+            services.AddIdentity<TUser, IdentityRole>();
 
             return services;
 

@@ -203,14 +203,13 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(0);
         }
 
-
-        /// <summary>
+	    /// <summary>
         ///     Creates the user asynchronous.
         /// </summary>
         /// <param name="user">The user.</param>
         /// <returns>Task.</returns>
         /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task CreateAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<IdentityResult> CreateAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
         {
             ThrowIfDisposed();
             if (user == null)
@@ -218,7 +217,7 @@ namespace MongoDB.AspNet.Identity
 
             db.GetCollection<TUser>(collectionName).Insert(user);
 
-            return Task.FromResult(user);
+            return Task.FromResult(IdentityResult.Success);
         }
 
         /// <summary>
@@ -227,14 +226,14 @@ namespace MongoDB.AspNet.Identity
         /// <param name="user">The user.</param>
         /// <returns>Task.</returns>
         /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task DeleteAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<IdentityResult> DeleteAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
         {
             ThrowIfDisposed();
             if (user == null)
                 throw new ArgumentNullException("user");
 
             db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id.ToString()))));
-            return Task.FromResult(true);
+            return Task.FromResult(IdentityResult.Success);
         }
 
         /// <summary>
@@ -306,7 +305,7 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user);
         }
 
-        /// <summary>
+	    /// <summary>
         /// Sets the email asynchronous.
         /// </summary>
         /// <param name="user">The user.</param>
@@ -339,13 +338,36 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult<string>(user.Email);
         }
 
-        /// <summary>
-        /// Gets the email confirmed asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task{System.Boolean}.</returns>
+		public virtual Task<string> GetNormalizedEmailAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			ThrowIfDisposed();
+			if (user == null)
+			{
+				throw new ArgumentNullException("user");
+			}
+			return Task.FromResult(user.NormalizedEmail);
+		}
 
-        public Task<bool> GetEmailConfirmedAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
+		public virtual Task SetNormalizedEmailAsync(TUser user, string normalizedEmail, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			ThrowIfDisposed();
+			if (user == null)
+			{
+				throw new ArgumentNullException("user");
+			}
+			user.NormalizedEmail = normalizedEmail;
+			return Task.FromResult(0);
+		}
+
+		/// <summary>
+		/// Gets the email confirmed asynchronous.
+		/// </summary>
+		/// <param name="user">The user.</param>
+		/// <returns>Task{System.Boolean}.</returns>
+
+		public Task<bool> GetEmailConfirmedAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
         {
             ThrowIfDisposed();
             if (user == null)
@@ -361,14 +383,14 @@ namespace MongoDB.AspNet.Identity
         /// <param name="user">The user.</param>
         /// <returns>Task.</returns>
         /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task UpdateAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<IdentityResult> UpdateAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
         {
             ThrowIfDisposed();
             if (user == null)
                 throw new ArgumentNullException("user");
 
             db.GetCollection<TUser>(collectionName).Update(Query.EQ("_id", ObjectId.Parse(user.Id.ToString())), Update.Replace(user), UpdateFlags.Upsert);
-            return Task.FromResult(user);
+            return Task.FromResult(IdentityResult.Success);
         }
 
         /// <summary>
@@ -537,7 +559,7 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase));
         }
 
-        /// <summary>
+	    /// <summary>
         ///     Removes from role asynchronous.
         /// </summary>
         /// <param name="user">The user.</param>
@@ -691,7 +713,47 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult<bool>(user.TwoFactorEnabled);
         }
 
-        public Task<TUser> FindByLoginAsync(string loginProvider, string providerKey, CancellationToken cancellationToken = default(CancellationToken))
+		/// <summary>
+		///     Get all users with given claim
+		/// </summary>
+		/// <param name="claim"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public async virtual Task<IList<TUser>> GetUsersForClaimAsync(Claim claim, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			ThrowIfDisposed();
+			if (claim == null)
+			{
+				throw new ArgumentNullException("claim");
+			}
+
+			var users = Users.Where(u => u.Claims.Any(c => c.ClaimType == claim.Type && c.ClaimValue == claim.Value));
+			
+			return users.ToList();
+		}
+
+		/// <summary>
+		///     Get all users in given role
+		/// </summary>
+		/// <param name="roleName"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public async virtual Task<IList<TUser>> GetUsersInRoleAsync(string roleName, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			ThrowIfDisposed();
+			if (String.IsNullOrEmpty(roleName))
+			{
+				throw new ArgumentNullException("role");
+			}
+
+			var users = Users.Where(u => u.Roles.Any(r => r.Equals(roleName)));
+
+			return users.ToList();
+		}
+
+		public Task<TUser> FindByLoginAsync(string loginProvider, string providerKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -760,14 +822,14 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(0);
         }
 
-        /// <summary>
-        ///     Returns the DateTimeOffset that represents the end of a user's lockout, any time in the past should be considered
-        ///     not locked out.
-        /// </summary>
-        /// <param name="user"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public virtual Task<DateTimeOffset> GetLockoutEndDateAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
+		/// <summary>
+		///     Returns the DateTimeOffset that represents the end of a user's lockout, any time in the past should be considered
+		///     not locked out.
+		/// </summary>
+		/// <param name="user"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public virtual Task<DateTimeOffset?> GetLockoutEndDateAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -778,14 +840,14 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(user.LockoutEnd);
         }
 
-        /// <summary>
+	    /// <summary>
         ///     Locks a user out until the specified end date (set to a past date, to unlock a user)
         /// </summary>
         /// <param name="user"></param>
         /// <param name="lockoutEnd"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public virtual Task SetLockoutEndDateAsync(TUser user, DateTimeOffset lockoutEnd, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual Task SetLockoutEndDateAsync(TUser user, DateTimeOffset? lockoutEnd, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -797,7 +859,7 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(0);
         }
 
-        /// <summary>
+	    /// <summary>
         ///     Used to record when an attempt to access the user has failed
         /// </summary>
         /// <param name="user"></param>

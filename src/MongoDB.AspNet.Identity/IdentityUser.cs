@@ -117,11 +117,13 @@ namespace MongoDB.AspNet.Identity
         /// <value>The email.</value>
         public virtual string Email { get; set; }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether [email confirmed].
-        /// </summary>
-        /// <value><c>true</c> if [email confirmed]; otherwise, <c>false</c>.</value>
-        public virtual bool EmailConfirmed { get; set; }
+		public virtual string NormalizedEmail { get; set; }
+
+		/// <summary>
+		/// Gets or sets a value indicating whether [email confirmed].
+		/// </summary>
+		/// <value><c>true</c> if [email confirmed]; otherwise, <c>false</c>.</value>
+		public virtual bool EmailConfirmed { get; set; }
 
         /// <summary>
         /// Gets or sets the access failed count.
@@ -138,7 +140,7 @@ namespace MongoDB.AspNet.Identity
         /// <summary>
         ///  DateTime in UTC when lockout ends, any time in the past is considered not locked out.
         /// </summary>
-        public virtual DateTimeOffset LockoutEnd { get; set; }
+        public virtual DateTimeOffset? LockoutEnd { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUser"/> class.

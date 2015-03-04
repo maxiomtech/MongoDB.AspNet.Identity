@@ -4,10 +4,8 @@ using Microsoft.AspNet.Identity;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-
 namespace MongoDB.AspNet.Identity
 {
-
     /// <summary>
     /// Class IdentityUser.
     /// </summary>

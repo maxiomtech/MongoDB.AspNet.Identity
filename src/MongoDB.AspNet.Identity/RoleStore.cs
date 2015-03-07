@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 using Microsoft.AspNet.Identity;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -14,9 +11,7 @@ using MongoDB.Driver.Builders;
 
 namespace MongoDB.AspNet.Identity
 {
-
-
-    public class RoleStore<TRole> : RoleStore<TRole, string>//, IdentityUserClaim>        
+    public class RoleStore<TRole> : RoleStore<TRole, string>      
     where TRole : IdentityRole, new()
     {
         public RoleStore(IdentityDbContext context) : base(context) { }
@@ -56,9 +51,8 @@ namespace MongoDB.AspNet.Identity
         {
             get { return db.GetCollection<IdentityRoleClaim>(collectionName).FindAll().AsQueryable(); }
         }
-
-
-        public virtual Task CreateAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+		
+		public virtual Task<IdentityResult> CreateAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.ThrowIfDisposed();
             if (role == null)
@@ -67,10 +61,10 @@ namespace MongoDB.AspNet.Identity
             }
 
             db.GetCollection<TRole>(collectionName).Insert(role);
-            return Task.FromResult(0);
+            return Task.FromResult(IdentityResult.Success);
         }
 
-        public virtual Task DeleteAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual Task<IdentityResult> DeleteAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.ThrowIfDisposed();
             if (role == null)
@@ -80,7 +74,7 @@ namespace MongoDB.AspNet.Identity
 
             db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(role.Id.ToString()))));
 
-            return Task.FromResult(0);
+            return Task.FromResult(IdentityResult.Success);
         }
 
         public void Dispose()
@@ -118,7 +112,7 @@ namespace MongoDB.AspNet.Identity
             }
         }
 
-        public virtual Task UpdateAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual Task<IdentityResult> UpdateAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.ThrowIfDisposed();
             if (role == null)
@@ -128,7 +122,7 @@ namespace MongoDB.AspNet.Identity
 
             db.GetCollection<TRole>(collectionName).Update(Query.EQ("_id", ObjectId.Parse(role.Id.ToString())), Update.Replace(role), UpdateFlags.Upsert);
 
-            return Task.FromResult(0);
+            return Task.FromResult(IdentityResult.Success);
         }
 
         public Task<string> GetRoleIdAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
@@ -165,7 +159,7 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(0);
         }
 
-        public Task<TRole> FindByIdAsync(string roleId, CancellationToken cancellationToken = default(CancellationToken))
+	    public Task<TRole> FindByIdAsync(string roleId, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -206,5 +200,28 @@ namespace MongoDB.AspNet.Identity
         {
             throw new NotImplementedException();
         }
-    }
+
+		public virtual Task<string> GetNormalizedRoleNameAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			ThrowIfDisposed();
+			if (role == null)
+			{
+				throw new ArgumentNullException("role");
+			}
+			return Task.FromResult(role.NormalizedName);
+		}
+
+		public virtual Task SetNormalizedRoleNameAsync(TRole role, string normalizedName, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			ThrowIfDisposed();
+			if (role == null)
+			{
+				throw new ArgumentNullException("role");
+			}
+			role.NormalizedName = normalizedName;
+			return Task.FromResult(0);
+		}
+	}
 }

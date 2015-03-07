@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using Microsoft.AspNet.Identity;
 
 namespace MongoDB.AspNet.Identity
 {
@@ -52,5 +50,6 @@ namespace MongoDB.AspNet.Identity
         ///     Role name
         /// </summary>
         public virtual string Name { get; set; }
-    }
+		public virtual string NormalizedName { get; set; }
+	}
 }

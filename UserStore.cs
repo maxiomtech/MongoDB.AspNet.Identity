@@ -13,7 +13,7 @@ namespace MongoDB.AspNet.Identity {
 	///     Class UserStore.
 	/// </summary>
 	/// <typeparam name="TUser">The type of the t user.</typeparam>
-	public class UserStore<TUser> : IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
+	public class UserStore<TUser> : IUserStore<TUser>, IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
 		IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>
 		where TUser : IdentityUser {
 		#region Private Methods & Variables

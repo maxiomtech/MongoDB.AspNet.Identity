@@ -21,7 +21,7 @@ namespace MongoDB.AspNet.Identity {
         /// <summary>
         ///     The database
         /// </summary>
-        private IMongoDatabase db;
+        private readonly IMongoDatabase db;
 
         /// <summary>
         ///     The _disposed

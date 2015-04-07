@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using MongoDB.Driver.Builders;
 
 namespace MongoDB.AspNet.Identity
 {
@@ -15,7 +14,7 @@ namespace MongoDB.AspNet.Identity
     ///     Class UserStore.
     /// </summary>
     /// <typeparam name="TUser">The type of the t user.</typeparam>
-    public class UserStore<TUser> : IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
+    public class UserStore<TUser> : IUserStore<TUser>, IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
         IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>
         where TUser : IdentityUser
     {
@@ -24,7 +23,7 @@ namespace MongoDB.AspNet.Identity
         /// <summary>
         ///     The database
         /// </summary>
-        private readonly MongoDatabase db;
+        private readonly IMongoDatabase db;
 
         /// <summary>
         ///     The _disposed
@@ -42,16 +41,15 @@ namespace MongoDB.AspNet.Identity
         /// <param name="connectionString">The connection string.</param>
         /// <returns>MongoDatabase.</returns>
         /// <exception cref="System.Exception">No database name specified in connection string</exception>
-        private MongoDatabase GetDatabaseFromSqlStyle(string connectionString)
+        private IMongoDatabase GetDatabaseFromSqlStyle(string connectionString)
         {
-            var conString = new MongoConnectionStringBuilder(connectionString);
-            MongoClientSettings settings = MongoClientSettings.FromConnectionStringBuilder(conString);
-            MongoServer server = new MongoClient(settings).GetServer();
-            if (conString.DatabaseName == null)
+            MongoUrl url = MongoUrl.Create(connectionString);
+            if (url.DatabaseName == null)
             {
                 throw new Exception("No database name specified in connection string");
             }
-            return server.GetDatabase(conString.DatabaseName);
+            MongoClientSettings settings = MongoClientSettings.FromUrl(url);
+            return new MongoClient(settings).GetDatabase(url.DatabaseName);
         }
 
         /// <summary>
@@ -59,15 +57,13 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         /// <param name="url">The URL.</param>
         /// <returns>MongoDatabase.</returns>
-        private MongoDatabase GetDatabaseFromUrl(MongoUrl url)
+        private IMongoDatabase GetDatabaseFromUrl(MongoUrl url)
         {
-            var client = new MongoClient(url);
-            MongoServer server = client.GetServer();
             if (url.DatabaseName == null)
             {
                 throw new Exception("No database name specified in connection string");
             }
-            return server.GetDatabase(url.DatabaseName); // WriteConcern defaulted to Acknowledged
+            return new MongoClient(url).GetDatabase(url.DatabaseName); // WriteConcern defaulted to Acknowledged
         }
 
         /// <summary>
@@ -76,22 +72,22 @@ namespace MongoDB.AspNet.Identity
         /// <param name="connectionString">The connection string.</param>
         /// <param name="dbName">Name of the database.</param>
         /// <returns>MongoDatabase.</returns>
-        private MongoDatabase GetDatabase(string connectionString, string dbName)
+        private IMongoDatabase GetDatabase(string connectionString, string dbName)
         {
             var client = new MongoClient(connectionString);
-            MongoServer server = client.GetServer();
-            return server.GetDatabase(dbName);
+            return client.GetDatabase(dbName);
         }
 
         #endregion
 
         #region Constructors
-        
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserStore{TUser}" /> class. Uses DefaultConnection name if none was
         ///     specified.
         /// </summary>
-        public UserStore() : this("DefaultConnection")
+        public UserStore()
+            : this("DefaultConnection")
         {
         }
 
@@ -144,13 +140,13 @@ namespace MongoDB.AspNet.Identity
         /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class using a already initialized Mongo Database.
         /// </summary>
         /// <param name="mongoDatabase">The mongo database.</param>
-        public UserStore(MongoDatabase mongoDatabase)
+        public UserStore(IMongoDatabase mongoDatabase)
         {
             db = mongoDatabase;
         }
 
 
-            /// <summary>
+        /// <summary>
         ///     Initializes a new instance of the <see cref="UserStore{TUser}" /> class.
         /// </summary>
         /// <param name="connectionName">Name of the connection from ConfigurationManager.ConnectionStrings[].</param>
@@ -246,7 +242,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection<TUser>(collectionName).Insert(user);
+            db.GetCollection<TUser>(collectionName).InsertOneAsync(user);
 
             return Task.FromResult(user);
         }
@@ -263,7 +259,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id))));
+            db.GetCollection<TUser>(collectionName).DeleteOneAsync(x => x.Id == user.Id);
             return Task.FromResult(true);
         }
 
@@ -275,8 +271,8 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindByIdAsync(string userId)
         {
             ThrowIfDisposed();
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
-            return Task.FromResult(user);
+
+            return db.GetCollection<TUser>(collectionName).Find(u => u.Id == userId).FirstOrDefaultAsync();
         }
 
         /// <summary>
@@ -287,9 +283,9 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindByNameAsync(string userName)
         {
             ThrowIfDisposed();
-            
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("UserName", userName)));
-            return Task.FromResult(user);
+
+            return 
+                    db.GetCollection<TUser>(collectionName).Find(u => u.UserName == userName).FirstOrDefaultAsync();
         }
 
         /// <summary>
@@ -305,7 +301,7 @@ namespace MongoDB.AspNet.Identity
                 throw new ArgumentNullException("user");
 
             db.GetCollection<TUser>(collectionName)
-                .Update(Query.EQ("_id", ObjectId.Parse(user.Id)), Update.Replace(user), UpdateFlags.Upsert);
+                .ReplaceOneAsync(x => x.Id == user.Id, user);
 
             return Task.FromResult(user);
         }
@@ -346,13 +342,9 @@ namespace MongoDB.AspNet.Identity
         /// <returns>Task{`0}.</returns>
         public Task<TUser> FindAsync(UserLoginInfo login)
         {
-            TUser user = null;
-            user =
-                db.GetCollection<TUser>(collectionName)
-                    .FindOne(Query.And(Query.EQ("Logins.LoginProvider", login.LoginProvider),
-                        Query.EQ("Logins.ProviderKey", login.ProviderKey)));
-
-            return Task.FromResult(user);
+            return
+                    db.GetCollection<TUser>(collectionName)
+                        .Find<TUser>(u => u.Logins.Any(l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey) == true).FirstOrDefaultAsync();
         }
 
         /// <summary>
@@ -546,4 +538,3 @@ namespace MongoDB.AspNet.Identity
         #endregion
     }
 }
-        

@@ -284,9 +284,8 @@ namespace MongoDB.AspNet.Identity
         {
             ThrowIfDisposed();
 
-            return Task.FromResult(
-                    db.GetCollection<TUser>(collectionName).Find(u => u.UserName == userName).ToListAsync().Result.FirstOrDefault()
-                );
+            return 
+                    db.GetCollection<TUser>(collectionName).Find(u => u.UserName == userName).FirstOrDefaultAsync();
         }
 
         /// <summary>
@@ -343,10 +342,9 @@ namespace MongoDB.AspNet.Identity
         /// <returns>Task{`0}.</returns>
         public Task<TUser> FindAsync(UserLoginInfo login)
         {
-            return Task.FromResult(
+            return
                     db.GetCollection<TUser>(collectionName)
-                        .Find<TUser>(u => u.Logins.Any(l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey) == true).ToListAsync().Result.FirstOrDefault()
-                );
+                        .Find<TUser>(u => u.Logins.Any(l => l.LoginProvider == login.LoginProvider && l.ProviderKey == login.ProviderKey) == true).FirstOrDefaultAsync();
         }
 
         /// <summary>

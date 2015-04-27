@@ -24,6 +24,37 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         /// <value>The name of the user.</value>
 		public virtual string UserName { get; set; }
+
+        /// <summary>
+        /// Get or sets the email of the user;
+        /// </summary>
+        /// <value>The email of the user.</value>
+        public virtual string Email { get; set; }
+
+        /// <summary>
+        /// Get or set if the email is confirmed
+        /// </summary>
+        /// <value>True or False</value>
+        public virtual bool EmailConfirmed { get; set; }
+
+        /// <summary>
+        /// Get or set the phone number of the user.
+        /// </summary>
+        /// <value>The user's phone number</value>
+        public virtual string PhoneNumber { get; set; }
+
+        /// <summary>
+        /// Get or set if user's phone number is confirmed
+        /// </summary>
+        /// <value>True or False</value>
+        public virtual bool PhoneNumberConfirmed { get; set; }
+
+        /// <summary>
+        /// Get or set if Two Factor is enabled
+        /// </summary>
+        /// <value>True or False</value>
+        public virtual bool TwoFactorEnabled { get; set; }
+
         /// <summary>
         /// Gets or sets the password hash.
         /// </summary>

@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace MongoDB.AspNet.Identity
 {
-    internal static class Utils
+    internal static class Utils 
     {
         /// <summary>
         /// Converts an IEnumberable of T to a IList of T
@@ -14,6 +14,6 @@ namespace MongoDB.AspNet.Identity
         internal static IList<T> ToIList<T>(this IEnumerable<T> enumerable)
         {
             return enumerable.ToList();
-        }
+        }       
     }
 }

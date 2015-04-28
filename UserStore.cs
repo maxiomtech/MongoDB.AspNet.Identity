@@ -17,7 +17,7 @@ namespace MongoDB.AspNet.Identity
     /// <typeparam name="TUser">The type of the t user.</typeparam>
     public class UserStore<TUser> : IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
         IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>, IUserStore<TUser>, IUserEmailStore<TUser>,
-        IUserPhoneNumberStore<TUser>, IUserTwoFactorStore<TUser, string>
+        IUserPhoneNumberStore<TUser>, IUserTwoFactorStore<TUser, string>, IUserLockoutStore<TUser, string>
         where TUser : IdentityUser
     {
         #region Private Methods & Variables
@@ -666,6 +666,120 @@ namespace MongoDB.AspNet.Identity
                 throw new ArgumentNullException("user");
 
             return db.GetCollection<TUser>(collectionName).ReplaceOneAsync(x => x.Id == user.Id, user);
+        }
+
+        /// <summary>
+        /// Returns the current number of failed access
+        /// </summary>
+        /// <param name="user">User</param>
+        /// <returns>Failed access</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>  
+        public async Task<int> GetAccessFailedCountAsync(TUser user)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            return (await db.GetCollection<TUser>(collectionName).Find(x => x.Id == user.Id).FirstOrDefaultAsync()).AccessFailedCount;
+        }
+
+
+        /// <summary>
+        /// Get Lockout enable asynchronous
+        /// </summary>
+        /// <param name="user">User</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>  
+        public async Task<bool> GetLockoutEnabledAsync(TUser user)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            return (await db.GetCollection<TUser>(collectionName).Find(x => x.Id == user.Id).FirstOrDefaultAsync()).LockoutEnabled;
+        }
+
+        /// <summary>
+        /// Get lockout end date asynchronous
+        /// </summary>
+        /// <param name="user">User</param>
+        /// <returns>Return date</returns>
+        /// <exception cref="System.ArgumentNullException">user</exception>  
+        public async Task<DateTimeOffset> GetLockoutEndDateAsync(TUser user)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            return (await db.GetCollection<TUser>(collectionName).Find(x => x.Id == user.Id).FirstOrDefaultAsync()).LockoutEndDate;
+        }
+
+        /// <summary>
+        /// Increment number of failed access
+        /// </summary>
+        /// <param name="user">User</param>
+        /// <exception cref="System.ArgumentNullException">user</exception>  
+        public async Task<int> IncrementAccessFailedCountAsync(TUser user)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            TUser userStored = (await db.GetCollection<TUser>(collectionName).Find(x => x.Id == user.Id).FirstOrDefaultAsync());
+            userStored.AccessFailedCount++;
+            await db.GetCollection<TUser>(collectionName).ReplaceOneAsync(x => x.Id == user.Id, userStored);
+
+            return userStored.AccessFailedCount;
+        }
+
+        /// <summary>
+        /// Reset to zero the number of Access failed
+        /// </summary>
+        /// <param name="user">user</param>
+        /// <exception cref="System.ArgumentNullException">user</exception>  
+        public async Task ResetAccessFailedCountAsync(TUser user)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            TUser userStored = (await db.GetCollection<TUser>(collectionName).Find(x => x.Id == user.Id).FirstOrDefaultAsync());
+            userStored.AccessFailedCount = 0;
+            await db.GetCollection<TUser>(collectionName).ReplaceOneAsync(x => x.Id == user.Id, userStored);
+        }
+
+        /// <summary>
+        /// Set Locout enable
+        /// </summary>
+        /// <param name="user">User</param>
+        /// <param name="enabled">True or false</param>
+        /// <exception cref="System.ArgumentNullException">user</exception>  
+        public async Task SetLockoutEnabledAsync(TUser user, bool enabled)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            TUser userStored = (await db.GetCollection<TUser>(collectionName).Find(x => x.Id == user.Id).FirstOrDefaultAsync());
+            userStored.LockoutEnabled = enabled;
+            await db.GetCollection<TUser>(collectionName).ReplaceOneAsync(x => x.Id == user.Id, userStored);
+        }
+
+        /// <summary>
+        /// Set lockout end date
+        /// </summary>
+        /// <param name="user">User</param>
+        /// <param name="lockoutEnd">End date</param>
+        /// <exception cref="System.ArgumentNullException">user</exception>  
+        public async Task SetLockoutEndDateAsync(TUser user, DateTimeOffset lockoutEnd)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            TUser userStored = (await db.GetCollection<TUser>(collectionName).Find(x => x.Id == user.Id).FirstOrDefaultAsync());
+            userStored.LockoutEndDate = lockoutEnd;
+            await db.GetCollection<TUser>(collectionName).ReplaceOneAsync(x => x.Id == user.Id, userStored);
         }
     }
 }

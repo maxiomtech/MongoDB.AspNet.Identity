@@ -2,6 +2,7 @@
 using Microsoft.AspNet.Identity;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System;
 
 
 namespace MongoDB.AspNet.Identity
@@ -54,6 +55,22 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         /// <value>True or False</value>
         public virtual bool TwoFactorEnabled { get; set; }
+
+        /// <summary>
+        /// Get or set current number of failed access
+        /// </summary>
+        /// <value>Number of failed access</value>
+        public int AccessFailedCount { get; set; }
+
+        /// <summary>
+        /// Get or set lockout
+        /// </summary>
+        public bool LockoutEnabled { get; set; }
+
+        /// <summary>
+        /// Get or set lockout end date
+        /// </summary>
+        public DateTimeOffset LockoutEndDate { get; set; }
 
         /// <summary>
         /// Gets or sets the password hash.

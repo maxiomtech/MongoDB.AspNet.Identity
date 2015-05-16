@@ -1,5 +1,4 @@
 using System;
-using System.Configuration;
 using System.Linq;
 using MongoDB.Driver;
 
@@ -44,14 +43,13 @@ where TUser : IdentityUser
         /// <exception cref="System.Exception">No database name specified in connection string</exception>
         private MongoDatabase GetDatabaseFromSqlStyle(string connectionString)
         {
-            var conString = new MongoConnectionStringBuilder(connectionString);
-            MongoClientSettings settings = MongoClientSettings.FromConnectionStringBuilder(conString);
-            MongoServer server = new MongoClient(settings).GetServer();
+            var conString = new MongoUrlBuilder(connectionString);
             if (conString.DatabaseName == null)
             {
                 throw new Exception("No database name specified in connection string");
             }
-            return server.GetDatabase(conString.DatabaseName);
+            var client = new MongoClient(connectionString);
+            return client.GetServer().GetDatabase(conString.DatabaseName);
         }
 
         /// <summary>

@@ -1,335 +1,184 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using Microsoft.AspNet.Identity;
-using MongoDB.Bson;
-using MongoDB.Driver;
-using MongoDB.Driver.Builders;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="UserStore.cs" company="">
+//
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
 
 namespace MongoDB.AspNet.Identity
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Security.Claims;
+    using System.Threading.Tasks;
+
+    using JetBrains.Annotations;
+
+    using Microsoft.AspNet.Identity;
+
+    using MongoDB.Bson;
+    using MongoDB.Driver;
+
     /// <summary>
-    ///     Class UserStore.
+    /// Class UserStore.
     /// </summary>
-    /// <typeparam name="TUser">The type of the t user.</typeparam>
-    public class UserStore<TUser> : IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
-        IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>
+    /// <typeparam name="TUser">
+    /// The type of the user.
+    /// </typeparam>
+    public class UserStore<TUser> : UserStore<TUser, IdentityRole, string, IdentityUserLogin, IdentityUserRole, IdentityUserClaim>,
+                                    IUserStore<TUser>
         where TUser : IdentityUser
     {
-        #region Private Methods & Variables
+        #region Constructors and Destructors
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class.
+        /// </summary>
+        /// <param name="context">
+        /// The context.
+        /// </param>
+        public UserStore(IdentityDbContext context)
+            : base(context.Database)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class.
+        /// </summary>
+        /// <param name="database">
+        /// The database.
+        /// </param>
+        public UserStore(IMongoDatabase database)
+            : base(database)
+        {
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Class UserStore.
+    /// </summary>
+    /// <typeparam name="TUser">
+    /// The type of the user.
+    /// </typeparam>
+    /// <typeparam name="TRole">
+    /// The type of the role.
+    /// </typeparam>
+    /// <typeparam name="TKey">
+    /// The type of the key.
+    /// </typeparam>
+    /// <typeparam name="TUserLogin">
+    /// The type of the user login.
+    /// </typeparam>
+    /// <typeparam name="TUserRole">
+    /// The type of the user role.
+    /// </typeparam>
+    /// <typeparam name="TUserClaim">
+    /// The type of the user claim.
+    /// </typeparam>
+    public class UserStore<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim> : IUserLoginStore<TUser, TKey>,
+                                                                                    IUserClaimStore<TUser, TKey>,
+                                                                                    IUserRoleStore<TUser, TKey>,
+                                                                                    IUserPasswordStore<TUser, TKey>,
+                                                                                    IUserSecurityStampStore<TUser, TKey>,
+                                                                                    IQueryableUserStore<TUser, TKey>,
+                                                                                    IUserEmailStore<TUser, TKey>,
+                                                                                    IUserPhoneNumberStore<TUser, TKey>,
+                                                                                    IUserTwoFactorStore<TUser, TKey>
+        where TUser : IdentityUser<TKey, TUserLogin, TUserRole, TUserClaim>
+        where TRole : IdentityRole<TKey, TUserRole>
+        where TKey : IEquatable<TKey>
+        where TUserLogin : IdentityUserLogin<TKey>, new()
+        where TUserRole : IdentityUserRole<TKey>, new()
+        where TUserClaim : IdentityUserClaim<TKey>, new()
+    {
+        #region Fields
+
+        /// <summary>
+        ///     The AspNetUsers collection name
+        /// </summary>
+        private readonly string collectionName = "AspNetUsers";
 
         /// <summary>
         ///     The database
         /// </summary>
-        private readonly MongoDatabase db;
+        private readonly IMongoDatabase db;
 
         /// <summary>
         ///     The _disposed
         /// </summary>
-        private bool _disposed;
-
-        /// <summary>
-        /// The AspNetUsers collection name
-        /// </summary>
-        private const string collectionName = "AspNetUsers";
-
-        /// <summary>
-        ///     Gets the database from connection string.
-        /// </summary>
-        /// <param name="connectionString">The connection string.</param>
-        /// <returns>MongoDatabase.</returns>
-        /// <exception cref="System.Exception">No database name specified in connection string</exception>
-        private MongoDatabase GetDatabaseFromSqlStyle(string connectionString)
-        {
-            var conString = new MongoConnectionStringBuilder(connectionString);
-            MongoClientSettings settings = MongoClientSettings.FromConnectionStringBuilder(conString);
-            MongoServer server = new MongoClient(settings).GetServer();
-            if (conString.DatabaseName == null)
-            {
-                throw new Exception("No database name specified in connection string");
-            }
-            return server.GetDatabase(conString.DatabaseName);
-        }
-
-        /// <summary>
-        ///     Gets the database from URL.
-        /// </summary>
-        /// <param name="url">The URL.</param>
-        /// <returns>MongoDatabase.</returns>
-        private MongoDatabase GetDatabaseFromUrl(MongoUrl url)
-        {
-            var client = new MongoClient(url);
-            MongoServer server = client.GetServer();
-            if (url.DatabaseName == null)
-            {
-                throw new Exception("No database name specified in connection string");
-            }
-            return server.GetDatabase(url.DatabaseName); // WriteConcern defaulted to Acknowledged
-        }
-
-        /// <summary>
-        ///     Uses connectionString to connect to server and then uses databae name specified.
-        /// </summary>
-        /// <param name="connectionString">The connection string.</param>
-        /// <param name="dbName">Name of the database.</param>
-        /// <returns>MongoDatabase.</returns>
-        private MongoDatabase GetDatabase(string connectionString, string dbName)
-        {
-            var client = new MongoClient(connectionString);
-            MongoServer server = client.GetServer();
-            return server.GetDatabase(dbName);
-        }
+        private bool disposed;
 
         #endregion
 
-        #region Constructors
-        
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="UserStore{TUser}" /> class. Uses DefaultConnection name if none was
-        ///     specified.
-        /// </summary>
-        public UserStore() : this("DefaultConnection")
-        {
-        }
+        #region Public Properties
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="UserStore{TUser}" /> class. Uses name from ConfigurationManager or a
-        ///     mongodb:// Url.
+        ///     Gets the users.
         /// </summary>
-        /// <param name="connectionNameOrUrl">The connection name or URL.</param>
-        public UserStore(string connectionNameOrUrl)
-        {
-            if (connectionNameOrUrl.ToLower().StartsWith("mongodb://"))
-            {
-                db = GetDatabaseFromUrl(new MongoUrl(connectionNameOrUrl));
-            }
-            else
-            {
-                string connStringFromManager =
-                    ConfigurationManager.ConnectionStrings[connectionNameOrUrl].ConnectionString;
-                if (connStringFromManager.ToLower().StartsWith("mongodb://"))
-                {
-                    db = GetDatabaseFromUrl(new MongoUrl(connStringFromManager));
-                }
-                else
-                {
-                    db = GetDatabaseFromSqlStyle(connStringFromManager);
-                }
-            }
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="UserStore{TUser}" /> class. Uses name from ConfigurationManager or a
-        ///     mongodb:// Url.
-        ///     Database can be specified separately from connection server.
-        /// </summary>
-        /// <param name="connectionNameOrUrl">The connection name or URL.</param>
-        /// <param name="dbName">Name of the database.</param>
-        public UserStore(string connectionNameOrUrl, string dbName)
-        {
-            if (connectionNameOrUrl.ToLower().StartsWith("mongodb://"))
-            {
-                db = GetDatabase(connectionNameOrUrl, dbName);
-            }
-            else
-            {
-                db = GetDatabase(ConfigurationManager.ConnectionStrings[connectionNameOrUrl].ConnectionString, dbName);
-            }
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class using a already initialized Mongo Database.
-        /// </summary>
-        /// <param name="mongoDatabase">The mongo database.</param>
-        public UserStore(MongoDatabase mongoDatabase)
-        {
-            db = mongoDatabase;
-        }
-
-
-            /// <summary>
-        ///     Initializes a new instance of the <see cref="UserStore{TUser}" /> class.
-        /// </summary>
-        /// <param name="connectionName">Name of the connection from ConfigurationManager.ConnectionStrings[].</param>
-        /// <param name="useMongoUrlFormat">if set to <c>true</c> [use mongo URL format].</param>
-        [Obsolete("Use UserStore(connectionNameOrUrl)")]
-        public UserStore(string connectionName, bool useMongoUrlFormat)
-        {
-            string connectionString = ConfigurationManager.ConnectionStrings[connectionName].ConnectionString;
-            if (useMongoUrlFormat)
-            {
-                var url = new MongoUrl(connectionString);
-                db = GetDatabaseFromUrl(url);
-            }
-            else
-            {
-                db = GetDatabaseFromSqlStyle(connectionString);
-            }
-        }
+        /// <value>
+        ///     The users.
+        /// </value>
+        public IQueryable<TUser> Users { get; private set; }
 
         #endregion
 
-        #region Methods
+        #region Public Methods and Operators
 
         /// <summary>
-        ///     Adds the claim asynchronous.
+        /// Adds the <paramref name="claim"/> asynchronous.
         /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="claim">The claim.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task AddClaimAsync(TUser user, Claim claim)
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <param name="claim">
+        /// The claim.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task AddClaimAsync([NotNull]TUser user, [NotNull]Claim claim)
         {
-            ThrowIfDisposed();
+            this.ThrowIfDisposed();
             if (user == null)
-                throw new ArgumentNullException("user");
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
 
             if (!user.Claims.Any(x => x.ClaimType == claim.Type && x.ClaimValue == claim.Value))
             {
-                user.Claims.Add(new IdentityUserClaim
-                {
-                    ClaimType = claim.Type,
-                    ClaimValue = claim.Value
-                });
+                user.Claims.Add(new IdentityUserClaim { ClaimType = claim.Type, ClaimValue = claim.Value });
             }
 
-
             return Task.FromResult(0);
         }
 
         /// <summary>
-        ///     Gets the claims asynchronous.
+        /// Adds the <paramref name="login"/> asynchronously.
         /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task{IList{Claim}}.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<IList<Claim>> GetClaimsAsync(TUser user)
+        /// <param name="user">
+        /// The <paramref name="user"/> .
+        /// </param>
+        /// <param name="login">
+        /// The <paramref name="user"/> login information.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// The <paramref name="user"/> cannot be <see langword="null"/> .
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task AddLoginAsync([NotNull]TUser user, [NotNull]UserLoginInfo login)
         {
-            ThrowIfDisposed();
+            this.ThrowIfDisposed();
             if (user == null)
-                throw new ArgumentNullException("user");
-
-            IList<Claim> result = user.Claims.Select(c => new Claim(c.ClaimType, c.ClaimValue)).ToList();
-            return Task.FromResult(result);
-        }
-
-        /// <summary>
-        ///     Removes the claim asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="claim">The claim.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task RemoveClaimAsync(TUser user, Claim claim)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            user.Claims.RemoveAll(x => x.ClaimType == claim.Type && x.ClaimValue == claim.Value);
-            return Task.FromResult(0);
-        }
-
-
-        /// <summary>
-        ///     Creates the user asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task CreateAsync(TUser user)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            db.GetCollection<TUser>(collectionName).Insert(user);
-
-            return Task.FromResult(user);
-        }
-
-        /// <summary>
-        ///     Deletes the user asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task DeleteAsync(TUser user)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id))));
-            return Task.FromResult(true);
-        }
-
-        /// <summary>
-        ///     Finds the by identifier asynchronous.
-        /// </summary>
-        /// <param name="userId">The user identifier.</param>
-        /// <returns>Task{`0}.</returns>
-        public Task<TUser> FindByIdAsync(string userId)
-        {
-            ThrowIfDisposed();
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
-            return Task.FromResult(user);
-        }
-
-        /// <summary>
-        ///     Finds the by name asynchronous.
-        /// </summary>
-        /// <param name="userName">Name of the user.</param>
-        /// <returns>Task{`0}.</returns>
-        public Task<TUser> FindByNameAsync(string userName)
-        {
-            ThrowIfDisposed();
-            
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("UserName", userName)));
-            return Task.FromResult(user);
-        }
-
-        /// <summary>
-        ///     Updates the user asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task UpdateAsync(TUser user)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            db.GetCollection<TUser>(collectionName)
-                .Update(Query.EQ("_id", ObjectId.Parse(user.Id)), Update.Replace(user), UpdateFlags.Upsert);
-
-            return Task.FromResult(user);
-        }
-
-        /// <summary>
-        ///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
-        {
-            _disposed = true;
-        }
-
-        /// <summary>
-        ///     Adds the login asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="login">The login.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task AddLoginAsync(TUser user, UserLoginInfo login)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
 
             if (!user.Logins.Any(x => x.LoginProvider == login.LoginProvider && x.ProviderKey == login.ProviderKey))
             {
@@ -340,48 +189,526 @@ namespace MongoDB.AspNet.Identity
         }
 
         /// <summary>
-        ///     Finds the user asynchronous.
+        /// Adds to <paramref name="role"/> asynchronous.
         /// </summary>
-        /// <param name="login">The login.</param>
-        /// <returns>Task{`0}.</returns>
-        public Task<TUser> FindAsync(UserLoginInfo login)
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <param name="role">
+        /// The role.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task AddToRoleAsync([NotNull]TUser user, [NotNull]string role)
         {
-            TUser user = null;
-            user =
-                db.GetCollection<TUser>(collectionName)
-                    .FindOne(Query.And(Query.EQ("Logins.LoginProvider", login.LoginProvider),
-                        Query.EQ("Logins.ProviderKey", login.ProviderKey)));
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
 
-            return Task.FromResult(user);
+            if (!user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase))
+            {
+                user.Roles.Add(role);
+            }
+
+            return Task.FromResult(true);
         }
 
         /// <summary>
-        ///     Gets the logins asynchronous.
+        /// Creates the <paramref name="user"/> asynchronous.
         /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task{IList{UserLoginInfo}}.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user)
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public async Task CreateAsync([NotNull]TUser user)
         {
-            ThrowIfDisposed();
+            this.ThrowIfDisposed();
             if (user == null)
-                throw new ArgumentNullException("user");
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            await this.db.GetCollection<TUser>(this.collectionName).InsertOneAsync(user).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Deletes the <paramref name="user"/> asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public async Task DeleteAsync([NotNull]TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            var filter = new FilterDefinitionBuilder<TUser>().Eq("_id", ObjectId.Parse(user.Id.ToString()));
+            await this.db.GetCollection<TUser>(this.collectionName).DeleteOneAsync(filter).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        ///     Performs application-defined tasks associated with freeing,
+        ///     releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            this.disposed = true;
+        }
+
+        /// <summary>
+        /// Finds the user asynchronous.
+        /// </summary>
+        /// <param name="login">
+        /// The <paramref name="login"/>.
+        /// </param>
+        /// <returns>
+        /// A Task{TUser}.
+        /// </returns>
+        public async Task<TUser> FindAsync([NotNull]UserLoginInfo login)
+        {
+            var filter = Builders<TUser>.Filter.And(
+                Builders<TUser>.Filter.Eq("Logins.LoginProvider", login.LoginProvider),
+                Builders<TUser>.Filter.Eq("Logins.ProviderKey", login.ProviderKey));
+
+            var cursor = await this.db.GetCollection<TUser>(this.collectionName).FindAsync<TUser>(filter).ConfigureAwait(false);
+            var users = await cursor.ToListAsync().ConfigureAwait(false);
+            var user = users.FirstOrDefault();
+
+            return user;
+        }
+
+        /// <summary>
+        /// Finds the by <paramref name="email"/> asynchronous.
+        /// </summary>
+        /// <param name="email">
+        /// The email.
+        /// </param>
+        /// <returns>
+        /// A Task{TUser}.
+        /// </returns>
+        public async Task<TUser> FindByEmailAsync([NotNull]string email)
+        {
+            this.ThrowIfDisposed();
+
+            var cursor = await this.db.GetCollection<TUser>(this.collectionName).FindAsync<TUser>(Builders<TUser>.Filter.Eq("Email", email)).ConfigureAwait(false);
+            var users = await cursor.ToListAsync().ConfigureAwait(false);
+            var user = users.FirstOrDefault();
+
+            return user;
+        }
+
+        /// <summary>
+        /// Finds the by identifier asynchronous.
+        /// </summary>
+        /// <param name="userId">
+        /// The user identifier.
+        /// </param>
+        /// <returns>
+        /// A Task{<typeparamref name="TUser"/>}.
+        /// </returns>
+        public async Task<TUser> FindByIdAsync([NotNull]TKey userId)
+        {
+            this.ThrowIfDisposed();
+
+            var cursor = await this.db.GetCollection<TUser>(this.collectionName).FindAsync<TUser>(Builders<TUser>.Filter.Eq("_id", ObjectId.Parse(userId.ToString()))).ConfigureAwait(false);
+            var users = await cursor.ToListAsync().ConfigureAwait(false);
+            var user = users.FirstOrDefault();
+
+            return user;
+        }
+
+        /// <summary>
+        /// Finds the by name asynchronous.
+        /// </summary>
+        /// <param name="userName">
+        /// Name of the user.
+        /// </param>
+        /// <returns>
+        /// A Task{TUser}.
+        /// </returns>
+        public async Task<TUser> FindByNameAsync([NotNull]string userName)
+        {
+            this.ThrowIfDisposed();
+
+            var cursor = await this.db.GetCollection<TUser>(this.collectionName).FindAsync<TUser>(Builders<TUser>.Filter.Eq("UserName", ObjectId.Parse(userName))).ConfigureAwait(false);
+            var users = await cursor.ToListAsync().ConfigureAwait(false);
+            var user = users.FirstOrDefault();
+
+            return user;
+        }
+
+        /// <summary>
+        /// Gets the claims asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task{IList{Claim}}.
+        /// </returns>
+        public Task<IList<Claim>> GetClaimsAsync([NotNull]TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            IList<Claim> result = user.Claims.Select(c => new Claim(c.ClaimType, c.ClaimValue)).ToList();
+            return Task.FromResult(result);
+        }
+
+        /// <summary>
+        /// Gets the email asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <exception cref="System.ArgumentException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task{System.String}.
+        /// </returns>
+        public Task<string> GetEmailAsync([NotNull]TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentException(nameof(user));
+            }
+
+            return Task.FromResult(user.Email);
+        }
+
+        /// <summary>
+        /// Gets the email confirmed asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <exception cref="System.NotImplementedException">
+        /// Not implemented.
+        /// </exception>
+        /// <returns>
+        /// A Task{System.Boolean}.
+        /// </returns>
+        public Task<bool> GetEmailConfirmedAsync([NotNull]TUser user)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Gets the logins asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task{IList{UserLoginInfo}}.
+        /// </returns>
+        public Task<IList<UserLoginInfo>> GetLoginsAsync([NotNull]TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
 
             return Task.FromResult(user.Logins.ToIList());
         }
 
         /// <summary>
-        ///     Removes the login asynchronous.
+        /// Gets the password hash asynchronous.
         /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="login">The login.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task RemoveLoginAsync(TUser user, UserLoginInfo login)
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task{System.String}.
+        /// </returns>
+        public Task<string> GetPasswordHashAsync([NotNull]TUser user)
         {
-            ThrowIfDisposed();
+            this.ThrowIfDisposed();
             if (user == null)
-                throw new ArgumentNullException("user");
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            return Task.FromResult(user.PasswordHash);
+        }
+
+        /// <summary>
+        /// Gets the phone number asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task{System.String}.
+        /// </returns>
+        public Task<string> GetPhoneNumberAsync([NotNull]TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            return Task.FromResult(user.PhoneNumber);
+        }
+
+        /// <summary>
+        /// Gets the phone number confirmed asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task{System.Boolean}.
+        /// </returns>
+        public Task<bool> GetPhoneNumberConfirmedAsync([NotNull]TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            return Task.FromResult(user.PhoneNumberConfirmed);
+        }
+
+        /// <summary>
+        /// Gets the roles asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task{IList{System.String}}.
+        /// </returns>
+        public Task<IList<string>> GetRolesAsync([NotNull]TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            return Task.FromResult<IList<string>>(user.Roles);
+        }
+
+        /// <summary>
+        /// Gets the security stamp asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task{System.String}.
+        /// </returns>
+        public Task<string> GetSecurityStampAsync([NotNull]TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            return Task.FromResult(user.SecurityStamp);
+        }
+
+        /// <summary>
+        /// Gets the two factor enabled asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task{System.Boolean}.
+        /// </returns>
+        public Task<bool> GetTwoFactorEnabledAsync([NotNull]TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            return Task.FromResult(user.TwoFactorEnabled);
+        }
+
+        /// <summary>
+        /// Determines whether [has password asynchronous] [the specified <paramref name="user"/>].
+        /// </summary>
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// The <see cref="System.Threading.Tasks.Task"/> .
+        /// </returns>
+        public Task<bool> HasPasswordAsync([NotNull]TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            return Task.FromResult(user.PasswordHash != null);
+        }
+
+        /// <summary>
+        /// Determines whether [is in <paramref name="role"/> asynchronous] [the
+        ///     specified user].
+        /// </summary>
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <param name="role">
+        /// The role.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// The <see cref="System.Threading.Tasks.Task"/> .
+        /// </returns>
+        public Task<bool> IsInRoleAsync([NotNull]TUser user, [NotNull]string role)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            return Task.FromResult(user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase));
+        }
+
+        /// <summary>
+        /// Removes the <paramref name="claim"/> asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <param name="claim">
+        /// The claim.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task RemoveClaimAsync([NotNull]TUser user, [NotNull]Claim claim)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            user.Claims.RemoveAll(x => x.ClaimType == claim.Type && x.ClaimValue == claim.Value);
+            return Task.FromResult(0);
+        }
+
+        /// <summary>
+        /// Removes from <paramref name="role"/> asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <param name="role">
+        /// The role.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task RemoveFromRoleAsync([NotNull]TUser user, [NotNull] string role)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            user.Roles.RemoveAll(r => string.Equals(r, role, StringComparison.InvariantCultureIgnoreCase));
+
+            return Task.FromResult(0);
+        }
+
+        /// <summary>
+        /// Removes the <paramref name="login"/> asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <param name="login">
+        /// The login.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task RemoveLoginAsync([NotNull]TUser user, [NotNull] UserLoginInfo login)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
 
             user.Logins.RemoveAll(x => x.LoginProvider == login.LoginProvider && x.ProviderKey == login.ProviderKey);
 
@@ -389,161 +716,247 @@ namespace MongoDB.AspNet.Identity
         }
 
         /// <summary>
-        ///     Gets the password hash asynchronous.
+        /// Sets the <paramref name="email"/> asynchronous.
         /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task{System.String}.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<string> GetPasswordHashAsync(TUser user)
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <param name="email">
+        /// The email.
+        /// </param>
+        /// <exception cref="System.NotImplementedException">
+        /// Not implemented.
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task SetEmailAsync([NotNull]TUser user, [NotNull] string email)
         {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            return Task.FromResult(user.PasswordHash);
+            throw new NotImplementedException();
         }
 
         /// <summary>
-        ///     Determines whether [has password asynchronous] [the specified user].
+        /// Sets the email <paramref name="confirmed"/> asynchronous.
         /// </summary>
-        /// <param name="user">The user.</param>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<bool> HasPasswordAsync(TUser user)
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <param name="confirmed">
+        /// if set to <see langword="true"/> [confirmed].
+        /// </param>
+        /// <exception cref="System.NotImplementedException">
+        /// Not implemented.
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task SetEmailConfirmedAsync([NotNull]TUser user, bool confirmed)
         {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            return Task.FromResult(user.PasswordHash != null);
+            throw new NotImplementedException();
         }
 
         /// <summary>
-        ///     Sets the password hash asynchronous.
+        /// Sets the password hash asynchronous.
         /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="passwordHash">The password hash.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task SetPasswordHashAsync(TUser user, string passwordHash)
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <param name="passwordHash">
+        /// The password hash.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task SetPasswordHashAsync([NotNull]TUser user, [NotNull]string passwordHash)
         {
-            ThrowIfDisposed();
+            this.ThrowIfDisposed();
             if (user == null)
-                throw new ArgumentNullException("user");
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
 
             user.PasswordHash = passwordHash;
             return Task.FromResult(0);
         }
 
         /// <summary>
-        ///     Adds to role asynchronous.
+        /// Sets the phone number asynchronous.
         /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="role">The role.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task AddToRoleAsync(TUser user, string role)
+        /// <param name="user">
+        /// The <paramref name="user"/>.
+        /// </param>
+        /// <param name="phoneNumber">
+        /// The phone number.
+        /// </param>
+        /// <exception cref="System.ArgumentException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task SetPhoneNumberAsync([NotNull]TUser user, [NotNull]string phoneNumber)
         {
-            ThrowIfDisposed();
+            this.ThrowIfDisposed();
             if (user == null)
-                throw new ArgumentNullException("user");
+            {
+                throw new ArgumentException(nameof(user));
+            }
 
-            if (!user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase))
-                user.Roles.Add(role);
-
-            return Task.FromResult(true);
-        }
-
-        /// <summary>
-        ///     Gets the roles asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task{IList{System.String}}.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<IList<string>> GetRolesAsync(TUser user)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            return Task.FromResult<IList<string>>(user.Roles);
-        }
-
-        /// <summary>
-        ///     Determines whether [is in role asynchronous] [the specified user].
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="role">The role.</param>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<bool> IsInRoleAsync(TUser user, string role)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            return Task.FromResult(user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase));
-        }
-
-        /// <summary>
-        ///     Removes from role asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="role">The role.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task RemoveFromRoleAsync(TUser user, string role)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            user.Roles.RemoveAll(r => String.Equals(r, role, StringComparison.InvariantCultureIgnoreCase));
-
+            user.PhoneNumber = phoneNumber;
             return Task.FromResult(0);
         }
 
         /// <summary>
-        ///     Gets the security stamp asynchronous.
+        /// Sets the phone number <paramref name="confirmed"/> asynchronous.
         /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task{System.String}.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<string> GetSecurityStampAsync(TUser user)
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <param name="confirmed">
+        /// if set to <c>true</c> [confirmed].
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task SetPhoneNumberConfirmedAsync([NotNull]TUser user, bool confirmed)
         {
-            ThrowIfDisposed();
+            this.ThrowIfDisposed();
             if (user == null)
-                throw new ArgumentNullException("user");
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
 
-            return Task.FromResult(user.SecurityStamp);
+            user.PhoneNumberConfirmed = confirmed;
+            return Task.FromResult(0);
         }
 
         /// <summary>
-        ///     Sets the security stamp asynchronous.
+        /// Sets the security <paramref name="stamp"/> asynchronous.
         /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="stamp">The stamp.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task SetSecurityStampAsync(TUser user, string stamp)
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <param name="stamp">
+        /// The stamp.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task SetSecurityStampAsync([NotNull]TUser user, [NotNull]string stamp)
         {
-            ThrowIfDisposed();
+            this.ThrowIfDisposed();
             if (user == null)
-                throw new ArgumentNullException("user");
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
 
             user.SecurityStamp = stamp;
             return Task.FromResult(0);
         }
 
         /// <summary>
-        ///     Throws if disposed.
+        /// Sets the two factor <paramref name="enabled"/> asynchronous.
         /// </summary>
-        /// <exception cref="System.ObjectDisposedException"></exception>
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <param name="enabled">
+        /// if set to <see langword="true"/> [enabled].
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public Task SetTwoFactorEnabledAsync([NotNull]TUser user, bool enabled)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            user.TwoFactorEnabled = enabled;
+            return Task.FromResult(0);
+        }
+
+        /// <summary>
+        /// Updates the <paramref name="user"/> asynchronous.
+        /// </summary>
+        /// <param name="user">
+        /// The user.
+        /// </param>
+        /// <exception cref="System.ArgumentNullException">
+        /// <paramref name="user"/>
+        /// </exception>
+        /// <returns>
+        /// A Task.
+        /// </returns>
+        public async Task UpdateAsync([NotNull]TUser user)
+        {
+            this.ThrowIfDisposed();
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            await
+                this.db.GetCollection<TUser>(this.collectionName)
+                    .ReplaceOneAsync(Builders<TUser>.Filter.Eq("_id", ObjectId.Parse(user.Id.ToString())), user, new UpdateOptions { IsUpsert = true })
+                    .ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        ///     Throws if <see cref="disposed"/>.
+        /// </summary>
+        /// <exception cref="System.ObjectDisposedException">
+        /// Attempt to use a disposed object.
+        /// </exception>
         private void ThrowIfDisposed()
         {
-            if (_disposed)
-                throw new ObjectDisposedException(GetType().Name);
+            if (this.disposed)
+            {
+                throw new ObjectDisposedException(this.GetType().Name);
+            }
+        }
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser,TRole,TKey,TUserLogin,TUserRole,TUserClaim}"/> class.
+        /// </summary>
+        public UserStore()
+            : this(new IdentityDbContext().Database)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserStore{TUser,TRole,TKey,TUserLogin,TUserRole,TUserClaim}"/> class.
+        /// </summary>
+        /// <param name="context">
+        /// The context.
+        /// </param>
+        public UserStore(IMongoDatabase context)
+        {
+            this.db = context;
         }
 
         #endregion
     }
 }
-        

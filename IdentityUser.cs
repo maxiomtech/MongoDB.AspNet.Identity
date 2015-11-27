@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.AspNet.Identity;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -49,10 +50,42 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         /// <value>The logins.</value>
 		public virtual List<UserLoginInfo> Logins { get; private set; }
+		/// <summary>
+		/// Gets the email
+		/// </summary>
+		public string Email { get; set; }
+		/// <summary>
+		/// Gets the phone number
+		/// </summary>
+		public string PhoneNumber { get; set; }
+		/// <summary>
+		/// gets the email confirmed boolean
+		/// </summary>
+		public bool EmailConfirmed { get; set; }
+		/// <summary>
+		/// gets the phone confirmed boolean
+		/// </summary>
+		public bool PhoneNumberConfirmed { get; set; }
+		/// <summary>
+		/// gets two factor authentication boolean
+		/// </summary>
+		public bool TwoFactorEnabled { get; set; }
+		/// <summary>
+		/// gets date time offset
+		/// </summary>
+		public DateTimeOffset LockoutEndDateUtc { get; set; }
+		/// <summary>
+		/// gets failed counts
+		/// </summary>
+		public int AccessFailedCount { get; set; }
+		/// <summary>
+		/// gets lockout enabled boolean
+		/// </summary>
+		public bool LockoutEnabled { get; set; }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityUser"/> class.
-        /// </summary>
+		/// <summary>
+		/// Initializes a new instance of the <see cref="IdentityUser"/> class.
+		/// </summary>
 		public IdentityUser()
 		{
 			this.Claims = new List<IdentityUserClaim>();

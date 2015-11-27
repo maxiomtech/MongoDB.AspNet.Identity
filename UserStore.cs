@@ -16,15 +16,16 @@ namespace MongoDB.AspNet.Identity
     /// </summary>
     /// <typeparam name="TUser">The type of the t user.</typeparam>
     public class UserStore<TUser> : IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
-        IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>
-        where TUser : IdentityUser
+        IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>, IUserEmailStore<TUser>, IUserPhoneNumberStore<TUser>, IUserTwoFactorStore<TUser, string>,
+		IUserLockoutStore<TUser, string>
+		where TUser : IdentityUser
     {
         #region Private Methods & Variables
 
         /// <summary>
         ///     The database
         /// </summary>
-        private readonly MongoDatabase db;
+        private readonly MongoDatabase _db;
 
         /// <summary>
         ///     The _disposed
@@ -34,24 +35,18 @@ namespace MongoDB.AspNet.Identity
         /// <summary>
         /// The AspNetUsers collection name
         /// </summary>
-        private const string collectionName = "AspNetUsers";
+        private const string CollectionName = "AspNetUsers";
 
-        /// <summary>
-        ///     Gets the database from connection string.
-        /// </summary>
-        /// <param name="connectionString">The connection string.</param>
-        /// <returns>MongoDatabase.</returns>
-        /// <exception cref="System.Exception">No database name specified in connection string</exception>
-        private MongoDatabase GetDatabaseFromSqlStyle(string connectionString)
+		/// <summary>
+		///     Gets the database from connection string.
+		/// </summary>
+		/// <param name="connectionString">The connection string.</param>
+		/// <returns>MongoDatabase.</returns>
+		/// <exception cref="System.Exception">No database name specified in connection string</exception>
+		[Obsolete("Do not use .NET style connection strings, use URL style connection strings")]
+		private MongoDatabase GetDatabaseFromSqlStyle(string connectionString)
         {
-            var conString = new MongoConnectionStringBuilder(connectionString);
-            MongoClientSettings settings = MongoClientSettings.FromConnectionStringBuilder(conString);
-            MongoServer server = new MongoClient(settings).GetServer();
-            if (conString.DatabaseName == null)
-            {
-                throw new Exception("No database name specified in connection string");
-            }
-            return server.GetDatabase(conString.DatabaseName);
+			throw new Exception("Use URI style connection strings as described on https://docs.mongodb.org/manual/reference/connection-string/");
         }
 
         /// <summary>
@@ -104,7 +99,7 @@ namespace MongoDB.AspNet.Identity
         {
             if (connectionNameOrUrl.ToLower().StartsWith("mongodb://"))
             {
-                db = GetDatabaseFromUrl(new MongoUrl(connectionNameOrUrl));
+                _db = GetDatabaseFromUrl(new MongoUrl(connectionNameOrUrl));
             }
             else
             {
@@ -112,11 +107,11 @@ namespace MongoDB.AspNet.Identity
                     ConfigurationManager.ConnectionStrings[connectionNameOrUrl].ConnectionString;
                 if (connStringFromManager.ToLower().StartsWith("mongodb://"))
                 {
-                    db = GetDatabaseFromUrl(new MongoUrl(connStringFromManager));
+                    _db = GetDatabaseFromUrl(new MongoUrl(connStringFromManager));
                 }
                 else
                 {
-                    db = GetDatabaseFromSqlStyle(connStringFromManager);
+                    _db = GetDatabaseFromSqlStyle(connStringFromManager);
                 }
             }
         }
@@ -132,11 +127,11 @@ namespace MongoDB.AspNet.Identity
         {
             if (connectionNameOrUrl.ToLower().StartsWith("mongodb://"))
             {
-                db = GetDatabase(connectionNameOrUrl, dbName);
+                _db = GetDatabase(connectionNameOrUrl, dbName);
             }
             else
             {
-                db = GetDatabase(ConfigurationManager.ConnectionStrings[connectionNameOrUrl].ConnectionString, dbName);
+                _db = GetDatabase(ConfigurationManager.ConnectionStrings[connectionNameOrUrl].ConnectionString, dbName);
             }
         }
 
@@ -146,7 +141,7 @@ namespace MongoDB.AspNet.Identity
         /// <param name="mongoDatabase">The mongo database.</param>
         public UserStore(MongoDatabase mongoDatabase)
         {
-            db = mongoDatabase;
+            _db = mongoDatabase;
         }
 
 
@@ -162,11 +157,11 @@ namespace MongoDB.AspNet.Identity
             if (useMongoUrlFormat)
             {
                 var url = new MongoUrl(connectionString);
-                db = GetDatabaseFromUrl(url);
+                _db = GetDatabaseFromUrl(url);
             }
             else
             {
-                db = GetDatabaseFromSqlStyle(connectionString);
+                _db = GetDatabaseFromSqlStyle(connectionString);
             }
         }
 
@@ -246,7 +241,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection<TUser>(collectionName).Insert(user);
+            _db.GetCollection<TUser>(CollectionName).Insert(user);
 
             return Task.FromResult(user);
         }
@@ -263,7 +258,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection(collectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id))));
+            _db.GetCollection(CollectionName).Remove((Query.EQ("_id", ObjectId.Parse(user.Id))));
             return Task.FromResult(true);
         }
 
@@ -275,7 +270,7 @@ namespace MongoDB.AspNet.Identity
         public Task<TUser> FindByIdAsync(string userId)
         {
             ThrowIfDisposed();
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
+            TUser user = _db.GetCollection<TUser>(CollectionName).FindOne((Query.EQ("_id", ObjectId.Parse(userId))));
             return Task.FromResult(user);
         }
 
@@ -288,7 +283,7 @@ namespace MongoDB.AspNet.Identity
         {
             ThrowIfDisposed();
             
-            TUser user = db.GetCollection<TUser>(collectionName).FindOne((Query.EQ("UserName", userName)));
+            TUser user = _db.GetCollection<TUser>(CollectionName).FindOne((Query.EQ("UserName", userName)));
             return Task.FromResult(user);
         }
 
@@ -304,7 +299,7 @@ namespace MongoDB.AspNet.Identity
             if (user == null)
                 throw new ArgumentNullException("user");
 
-            db.GetCollection<TUser>(collectionName)
+            _db.GetCollection<TUser>(CollectionName)
                 .Update(Query.EQ("_id", ObjectId.Parse(user.Id)), Update.Replace(user), UpdateFlags.Upsert);
 
             return Task.FromResult(user);
@@ -344,18 +339,15 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         /// <param name="login">The login.</param>
         /// <returns>Task{`0}.</returns>
-        public Task<TUser> FindAsync(UserLoginInfo login)
-        {
-            TUser user = null;
-            user =
-                db.GetCollection<TUser>(collectionName)
-                    .FindOne(Query.And(Query.EQ("Logins.LoginProvider", login.LoginProvider),
-                        Query.EQ("Logins.ProviderKey", login.ProviderKey)));
+        public Task<TUser> FindAsync(UserLoginInfo login) {
+	        var user = _db.GetCollection<TUser>(CollectionName)
+		        .FindOne(Query.And(Query.EQ("Logins.LoginProvider", login.LoginProvider),
+			        Query.EQ("Logins.ProviderKey", login.ProviderKey)));
 
-            return Task.FromResult(user);
+	        return Task.FromResult(user);
         }
 
-        /// <summary>
+	    /// <summary>
         ///     Gets the logins asynchronous.
         /// </summary>
         /// <param name="user">The user.</param>
@@ -533,11 +525,189 @@ namespace MongoDB.AspNet.Identity
             return Task.FromResult(0);
         }
 
-        /// <summary>
-        ///     Throws if disposed.
-        /// </summary>
-        /// <exception cref="System.ObjectDisposedException"></exception>
-        private void ThrowIfDisposed()
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public virtual Task<bool> GetEmailConfirmedAsync(TUser user) {
+			return Task.FromResult(user.EmailConfirmed);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <param name="confirmed"></param>
+		/// <returns></returns>
+		public virtual Task SetEmailConfirmedAsync(TUser user, bool confirmed) {
+			user.EmailConfirmed = confirmed;
+			return Task.FromResult(0);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <param name="email"></param>
+		/// <returns></returns>
+		public virtual Task SetEmailAsync(TUser user, string email) {
+			user.Email = email;
+			return Task.FromResult(0);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public virtual Task<string> GetEmailAsync(TUser user) {
+			return Task.FromResult(user.Email);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="email"></param>
+		/// <returns></returns>
+		public virtual Task<TUser> FindByEmailAsync(string email) {
+			return Task.FromResult<TUser>(_db.GetCollection<TUser>("AspNeTUsers").FindOne(Query.EQ("email", (BsonValue)email)));
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <param name="phoneNumber"></param>
+		/// <returns></returns>
+		public virtual Task SetPhoneNumberAsync(TUser user, string phoneNumber) {
+			user.PhoneNumber = phoneNumber;
+			return Task.FromResult(0);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public virtual Task<string> GetPhoneNumberAsync(TUser user) {
+			return Task.FromResult(user.PhoneNumber);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public virtual Task<bool> GetPhoneNumberConfirmedAsync(TUser user) {
+			return Task.FromResult(user.PhoneNumberConfirmed);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <param name="confirmed"></param>
+		/// <returns></returns>
+		public virtual Task SetPhoneNumberConfirmedAsync(TUser user, bool confirmed) {
+			user.PhoneNumberConfirmed = confirmed;
+			return Task.FromResult(0);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <param name="enabled"></param>
+		/// <returns></returns>
+		public virtual Task SetTwoFactorEnabledAsync(TUser user, bool enabled) {
+			user.TwoFactorEnabled = enabled;
+			return Task.FromResult(0);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public virtual Task<bool> GetTwoFactorEnabledAsync(TUser user) {
+			return Task.FromResult(user.TwoFactorEnabled);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public virtual Task<DateTimeOffset> GetLockoutEndDateAsync(TUser user) {
+			return Task.FromResult(user.LockoutEndDateUtc);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <param name="lockoutEnd"></param>
+		/// <returns></returns>
+		public virtual Task SetLockoutEndDateAsync(TUser user, DateTimeOffset lockoutEnd) {
+			user.LockoutEndDateUtc = new DateTime(lockoutEnd.Ticks, DateTimeKind.Utc);
+			return Task.FromResult(0);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public virtual Task<int> IncrementAccessFailedCountAsync(TUser user) {
+			user.AccessFailedCount++;
+			return Task.FromResult(user.AccessFailedCount);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public virtual Task ResetAccessFailedCountAsync(TUser user) {
+			user.AccessFailedCount = 0;
+			return Task.FromResult(0);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public virtual Task<int> GetAccessFailedCountAsync(TUser user) {
+			return Task.FromResult(user.AccessFailedCount);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <returns></returns>
+		public virtual Task<bool> GetLockoutEnabledAsync(TUser user) {
+			return Task.FromResult(user.LockoutEnabled);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="user"></param>
+		/// <param name="enabled"></param>
+		/// <returns></returns>
+		public virtual Task SetLockoutEnabledAsync(TUser user, bool enabled) {
+			user.LockoutEnabled = enabled;
+			return Task.FromResult(0);
+		}
+
+		/// <summary>
+		///     Throws if disposed.
+		/// </summary>
+		/// <exception cref="System.ObjectDisposedException"></exception>
+		private void ThrowIfDisposed()
         {
             if (_disposed)
                 throw new ObjectDisposedException(GetType().Name);

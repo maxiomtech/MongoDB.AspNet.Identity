@@ -17,8 +17,7 @@ namespace MongoDB.AspNet.Identity
     /// <typeparam name="TUser">The type of the t user.</typeparam>
     public class UserStore<TUser> : IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
         IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>, IUserEmailStore<TUser>, IUserPhoneNumberStore<TUser>, IUserTwoFactorStore<TUser, string>,
-		IUserLockoutStore<TUser, string>
-		where TUser : IdentityUser
+		IUserLockoutStore<TUser, string>, IUserStore<TUser> where TUser : IdentityUser
     {
         #region Private Methods & Variables
 
@@ -37,19 +36,7 @@ namespace MongoDB.AspNet.Identity
         /// </summary>
         private const string CollectionName = "AspNetUsers";
 
-		/// <summary>
-		///     Gets the database from connection string.
-		/// </summary>
-		/// <param name="connectionString">The connection string.</param>
-		/// <returns>MongoDatabase.</returns>
-		/// <exception cref="System.Exception">No database name specified in connection string</exception>
-		[Obsolete("Do not use .NET style connection strings, use URL style connection strings")]
-		private MongoDatabase GetDatabaseFromSqlStyle(string connectionString)
-        {
-			throw new Exception("Use URI style connection strings as described on https://docs.mongodb.org/manual/reference/connection-string/");
-        }
-
-        /// <summary>
+	    /// <summary>
         ///     Gets the database from URL.
         /// </summary>
         /// <param name="url">The URL.</param>
@@ -103,16 +90,8 @@ namespace MongoDB.AspNet.Identity
             }
             else
             {
-                string connStringFromManager =
-                    ConfigurationManager.ConnectionStrings[connectionNameOrUrl].ConnectionString;
-                if (connStringFromManager.ToLower().StartsWith("mongodb://"))
-                {
-                    _db = GetDatabaseFromUrl(new MongoUrl(connStringFromManager));
-                }
-                else
-                {
-                    _db = GetDatabaseFromSqlStyle(connStringFromManager);
-                }
+                string connStringFromManager = ConfigurationManager.ConnectionStrings[connectionNameOrUrl].ConnectionString;
+				_db = GetDatabaseFromUrl(new MongoUrl(connStringFromManager));
             }
         }
 
@@ -154,15 +133,8 @@ namespace MongoDB.AspNet.Identity
         public UserStore(string connectionName, bool useMongoUrlFormat)
         {
             string connectionString = ConfigurationManager.ConnectionStrings[connectionName].ConnectionString;
-            if (useMongoUrlFormat)
-            {
-                var url = new MongoUrl(connectionString);
-                _db = GetDatabaseFromUrl(url);
-            }
-            else
-            {
-                _db = GetDatabaseFromSqlStyle(connectionString);
-            }
+			var url = new MongoUrl(connectionString);
+            _db = GetDatabaseFromUrl(url);
         }
 
         #endregion

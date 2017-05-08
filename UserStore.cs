@@ -14,8 +14,16 @@ namespace MongoDB.AspNet.Identity
     ///     Class UserStore.
     /// </summary>
     /// <typeparam name="TUser">The type of the t user.</typeparam>
-    public class UserStore<TUser> : IUserLoginStore<TUser>, IUserClaimStore<TUser>, IUserRoleStore<TUser>,
-        IUserPasswordStore<TUser>, IUserSecurityStampStore<TUser>
+    public class UserStore<TUser> :
+        IUserStore<TUser>,
+        IUserLoginStore<TUser>, 
+        IUserClaimStore<TUser>, 
+        IUserRoleStore<TUser>,
+        IUserPasswordStore<TUser>, 
+        IUserSecurityStampStore<TUser>,
+        IUserEmailStore<TUser>,
+        IUserLockoutStore<TUser, string>,
+        IUserTwoFactorStore<TUser, string>
         where TUser : IdentityUser
     {
         #region Private Methods & Variables
@@ -510,5 +518,202 @@ namespace MongoDB.AspNet.Identity
         }
 
         #endregion
+
+        /// <summary>Set the user email</summary>
+        /// <param name="user"></param>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        public Task SetEmailAsync(TUser user, string email)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            user.Email = email;
+            return Task.FromResult(0);
+        }
+
+        /// <summary>Get the user email</summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public Task<string> GetEmailAsync(TUser user)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            return Task.FromResult(user.Email);
+        }
+
+        /// <summary>Returns true if the user email is confirmed</summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public Task<bool> GetEmailConfirmedAsync(TUser user)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+            return Task.FromResult(user.EmailConfirmed);
+        }
+
+        /// <summary>Sets whether the user email is confirmed</summary>
+        /// <param name="user"></param>
+        /// <param name="confirmed"></param>
+        /// <returns></returns>
+        public Task SetEmailConfirmedAsync(TUser user, bool confirmed)
+        {
+            ThrowIfDisposed();
+            if (user == null)
+                throw new ArgumentNullException("user");
+
+            user.EmailConfirmed = confirmed;
+            return Task.FromResult(0);
+        }
+
+        /// <summary>Returns the user associated with this email</summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        public Task<TUser> FindByEmailAsync(string email)
+        {
+            ThrowIfDisposed();
+            var user = db.GetCollection<TUser>(collectionName)
+                .Find(Builders<TUser>.Filter.Eq("Email", email))
+                .FirstOrDefaultAsync();
+            return user;
+        }
+
+        /// <summary>
+        ///     Returns the DateTimeOffset that represents the end of a user's lockout, any time in the past should be considered
+        ///     not locked out.
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public async Task<DateTimeOffset> GetLockoutEndDateAsync(TUser user)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+            return await Task.FromResult(user.LockoutEndDateUtc.HasValue
+                    ? new DateTimeOffset(DateTime.SpecifyKind(user.LockoutEndDateUtc.Value, DateTimeKind.Utc))
+                    : new DateTimeOffset());
+        }
+
+        /// <summary>
+        ///     Locks a user out until the specified end date (set to a past date, to unlock a user)
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="lockoutEnd"></param>
+        /// <returns></returns>
+        public Task SetLockoutEndDateAsync(TUser user, DateTimeOffset lockoutEnd)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+            user.LockoutEndDateUtc = lockoutEnd.UtcDateTime;
+            return Task.FromResult(0);
+        }
+
+        /// <summary>
+        ///     Used to record when an attempt to access the user has failed
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public Task<int> IncrementAccessFailedCountAsync(TUser user)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+            user.AccessFailedCount++;
+            return Task.FromResult(user.AccessFailedCount);
+        }
+
+        /// <summary>
+        ///     Used to reset the access failed count, typically after the account is successfully accessed
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public Task ResetAccessFailedCountAsync(TUser user)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+            user.AccessFailedCount = 0;
+            return Task.FromResult(0);
+        }
+
+        /// <summary>
+        ///     Returns the current number of failed access attempts.  This number usually will be reset whenever the password is
+        ///     verified or the account is locked out.
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public Task<int> GetAccessFailedCountAsync(TUser user)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+            return Task.FromResult(user.AccessFailedCount);
+        }
+
+        /// <summary>Returns whether the user can be locked out.</summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public Task<bool> GetLockoutEnabledAsync(TUser user)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+            return Task.FromResult(user.LockoutEnabled);
+        }
+
+        /// <summary>Sets whether the user can be locked out.</summary>
+        /// <param name="user"></param>
+        /// <param name="enabled"></param>
+        /// <returns></returns>
+        public Task SetLockoutEnabledAsync(TUser user, bool enabled)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+            user.LockoutEnabled = enabled;
+            return Task.FromResult(0);
+        }
+
+        /// <summary>
+        ///     Sets whether two factor authentication is enabled for the user
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="enabled"></param>
+        /// <returns></returns>
+        public Task SetTwoFactorEnabledAsync(TUser user, bool enabled)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+            user.TwoFactorEnabled = enabled;
+            return Task.FromResult(0);
+        }
+
+        /// <summary>
+        ///     Returns whether two factor authentication is enabled for the user
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public Task<bool> GetTwoFactorEnabledAsync(TUser user)
+        {
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+            return Task.FromResult(user.TwoFactorEnabled);
+        }
     }
 }

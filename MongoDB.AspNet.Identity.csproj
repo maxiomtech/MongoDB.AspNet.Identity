@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IdentityUser.cs" />
+    <Compile Include="IdentityUserClaim.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UserStore.cs" />
     <Compile Include="Utils.cs" />
@@ -90,13 +91,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\PublishProfiles\MongoDbAspNetIdentity.pubxml" />
-    <Content Include="web.config" />
-    <None Include="web.Debug.config">
-      <DependentUpon>web.config</DependentUpon>
-    </None>
-    <None Include="web.Release.config">
-      <DependentUpon>web.config</DependentUpon>
-    </None>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

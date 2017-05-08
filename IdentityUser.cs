@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -9,7 +11,7 @@ namespace MongoDB.AspNet.Identity
     /// <summary>
     /// Class IdentityUser.
     /// </summary>
-    public class IdentityUser : IUser
+    public class IdentityUser : IUser<string>
     {
         /// <summary>
         /// Unique key for the user
@@ -51,9 +53,44 @@ namespace MongoDB.AspNet.Identity
 		public virtual List<UserLoginInfo> Logins { get; private set; }
 
         /// <summary>
+        /// Gets the phone number
+        /// </summary>
+        public virtual string PhoneNumber { get; set; }
+
+        /// <summary>
+        /// Gets Email address
+        /// </summary>
+        public virtual string Email { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public virtual bool EmailConfirmed { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public DateTime? LockoutEndDateUtc { get; set; } = DateTime.Now.ToUniversalTime();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int AccessFailedCount { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool LockoutEnabled { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool TwoFactorEnabled { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUser"/> class.
         /// </summary>
-		public IdentityUser()
+        public IdentityUser()
 		{
 			this.Claims = new List<IdentityUserClaim>();
 			this.Roles = new List<string>();
@@ -68,35 +105,5 @@ namespace MongoDB.AspNet.Identity
 		{
 			this.UserName = userName;
 		}
-	}
-
-    /// <summary>
-    /// Class IdentityUserClaim.
-    /// </summary>
-	public class IdentityUserClaim
-	{
-        /// <summary>
-        /// Gets or sets the identifier.
-        /// </summary>
-        /// <value>The identifier.</value>
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public virtual string Id { get; set; }
-        /// <summary>
-        /// Gets or sets the user identifier.
-        /// </summary>
-        /// <value>The user identifier.</value>
-        public virtual string UserId { get; set; }
-        /// <summary>
-        /// Gets or sets the type of the claim.
-        /// </summary>
-        /// <value>The type of the claim.</value>
-        public virtual string ClaimType { get; set; }
-        /// <summary>
-        /// Gets or sets the claim value.
-        /// </summary>
-        /// <value>The claim value.</value>
-		public virtual string ClaimValue { get; set; }
-        
 	}
 }

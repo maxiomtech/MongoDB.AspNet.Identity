@@ -23,6 +23,9 @@ __02-11-2014__ - [http://blogs.msdn.com/b/webdev/archive/2014/02/11/announcing-p
     * IUserClaimStore<TUser>
     * IUserPasswordStore<TUser>
     * IUserSecurityStampStore<TUser>
+    * IUserEmailStore<TUser> (1.0.7)
+    * IUserLockoutStore<TUser, string> (1.0.7)
+    * IUserTwoFactorStore<TUser, string> (1.0.7)
 
 ## Instructions ##
 These instructions assume you know how to set up MongoDB within an MVC application.
@@ -43,12 +46,20 @@ Install-Package MongoDB.AspNet.Identity
 4. In ~/Controllers/AccountController.cs
     * Remove the namespace: Microsoft.AspNet.Identity.EntityFramework
     * Add the connection string name to the constructor of the UserStore. Or empty constructor will use DefaultConnection
+5. In ~/App_Start/IdentityConfig.cs
+    * Remove reference to ApplicationDbContext
+    * Amend ApplicationUserManager to inherit UserManager<ApplicationUser, string>. Also amend parameter for ApplicationUser.GenerateUserIdentityAsync
+6. In ~/App_Start/Startup.Auth.cs
+    * Remove app.CreatePerOwinContext<ApplicationDbContext>(ApplicationDbContext.Create);
 
 ```C#
+AccountController requires a parameterless constructor. 
+You could instantiate the UserManager in this contructor using any the UserStore constructors.
 public AccountController()
 {
-    this.UserManager = new UserManager<ApplicationUser>(
-        new UserStore<ApplicationUser>("Mongo");
+    //examples
+    this.UserManager = 
+    new ApplicationUserManager(new UserStore<ApplicationUser>("MyConnection"));
 }
 ```
 
@@ -57,9 +68,9 @@ The UserStore has multiple constructors for handling connection strings. Here ar
 
 ### 1. SQL Style ###
 ```C#
-UserStore(string connectionNameOrUrl)
+UserStore<TUser>(string connectionNameOrUrl)
 ```
-<code>UserStore("Mongo")</code>
+<code>UserStore<TUser>("Mongo")</code>
 
 **web.config**
 ```xml
@@ -68,9 +79,9 @@ UserStore(string connectionNameOrUrl)
 
 ### 2. Mongo Style ###
 ```C#
-UserStore(string connectionNameOrUrl)
+UserStore<TUser>(string connectionNameOrUrl)
 ```
-<code>UserStore("Mongo")</code>
+<code>UserStore<TUser>("Mongo")</code>
 
 **web.config**
 ```xml
@@ -80,9 +91,9 @@ UserStore(string connectionNameOrUrl)
 **OR**
 
 ```C#
-UserStore(string connectionNameOrUrl)
+UserStore<TUser>(string connectionNameOrUrl)
 ```
-<code>UserStore("mongodb://localhost/{YourDataBase}")</code>
+<code>UserStore<TUser>("mongodb://localhost/{YourDataBase}")</code>
 
 
 ## Thanks To ##

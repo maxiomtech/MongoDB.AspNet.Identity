@@ -44,7 +44,7 @@ Full tech stack [here](/techstack.md)
 # Tech Stack File
 ![](https://img.stackshare.io/repo.svg "repo") [maxiomtech/MongoDB.AspNet.Identity](https://github.com/maxiomtech/MongoDB.AspNet.Identity)![](https://img.stackshare.io/public_badge.svg "public")
 <br/><br/>
-|44<br/>Tools used|12/27/23 <br/>Report generated|
+|44<br/>Tools used|01/04/24 <br/>Report generated|
 |------|------|
 </div>
 
@@ -215,7 +215,7 @@ Full tech stack [here](/techstack.md)
 |[MongoDB.Bson](https://www.nuget.org/MongoDB.Bson)|v2.4.3|05/08/17|asitebro |N/A|N/A|
 |[MongoDB.Driver](https://www.nuget.org/MongoDB.Driver)|v2.4.3|05/08/17|asitebro |N/A|[CVE-2022-48282](https://github.com/advisories/GHSA-7j9m-j397-g4wx) (High)|
 |[MongoDB.Driver.Core](https://www.nuget.org/MongoDB.Driver.Core)|v2.4.3|05/08/17|asitebro |N/A|N/A|
-|[Newtonsoft.Json](https://www.nuget.org/Newtonsoft.Json)|v6.0.4|05/08/17|asitebro |MIT|[](https://github.com/advisories/GHSA-5crp-9r3c-p9vr) (High)|
+|[Newtonsoft.Json](https://www.nuget.org/Newtonsoft.Json)|v6.0.4|05/08/17|asitebro |MIT|[](https://github.com/advisories/GHSA-8rfx-6mr3-5jh3) (High)<br/>[CVE-2024-21907](https://github.com/advisories/GHSA-5crp-9r3c-p9vr) (High)|
 |[Respond](https://www.nuget.org/Respond)|v1.2.0|05/08/17|asitebro |MIT|N/A|
 |[System.Runtime.InteropServices](https://www.nuget.org/System.Runtime.InteropServices)|v4.3.0|05/08/17|asitebro |N/A|N/A|
 |[System.Runtime.InteropServices.RuntimeInformation](https://www.nuget.org/System.Runtime.InteropServices.RuntimeInformation)|v4.3.0|05/08/17|asitebro |N/A|N/A|

@@ -2,7 +2,7 @@ repo_name: maxiomtech/MongoDB.AspNet.Identity
 report_id: db458c88f9c10b97ff5721c83ab0b8e0
 version: 0.1
 repo_type: Public
-timestamp: '2023-12-27T19:58:40+00:00'
+timestamp: '2024-01-04T14:56:28+00:00'
 requested_by: web-flow
 provider: github
 branch: master
@@ -31,6 +31,7 @@ tools:
   category: Languages & Frameworks
   sub_category: Languages
   image_url: https://img.stackshare.io/service/1015/1200px-C_Sharp_wordmark.svg.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity
   detection_source: Repo Metadata
 - name: CSS 3
   description: The latest evolution of the Cascading Style Sheets language
@@ -40,6 +41,7 @@ tools:
   category: Languages & Frameworks
   sub_category: Languages
   image_url: https://img.stackshare.io/service/6727/css.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity
   detection_source: Repo Metadata
 - name: JavaScript
   description: Lightweight, interpreted, object-oriented language with first-class
@@ -50,6 +52,7 @@ tools:
   category: Languages & Frameworks
   sub_category: Languages
   image_url: https://img.stackshare.io/service/1209/javascript.jpeg
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity
   detection_source: Repo Metadata
 - name: ".NET"
   description: A free, cross-platform, open source developer platform for building
@@ -61,6 +64,7 @@ tools:
   category: Languages & Frameworks
   sub_category: Frameworks (Full Stack)
   image_url: https://img.stackshare.io/service/1014/IoPy1dce_400x400.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
   detection_source: TestApplication/packages.config
   last_updated_by: asitebro
   last_updated_on: 2017-05-08 16:14:38.000000000 Z
@@ -74,6 +78,7 @@ tools:
   category: Languages & Frameworks
   sub_category: Frameworks (Full Stack)
   image_url: https://img.stackshare.io/service/11331/asp.net-core.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/MongoDB.AspNet.Identity.nuspec
   detection_source: MongoDB.AspNet.Identity.nuspec
   last_updated_by: asitebro
   last_updated_on: 2017-05-08 16:14:38.000000000 Z
@@ -101,6 +106,7 @@ tools:
   category: Libraries
   sub_category: Javascript UI Libraries
   image_url: https://img.stackshare.io/service/1021/lxEKmMnB_400x400.jpg
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
   detection_source: TestApplication/packages.config
   last_updated_by: asitebro
   last_updated_on: 2017-05-08 16:14:38.000000000 Z
@@ -112,6 +118,7 @@ tools:
   category: Data Stores
   sub_category: Databases
   image_url: https://img.stackshare.io/service/1030/leaf-360x360.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/MongoDB.AspNet.Identity.nuspec
   detection_source: MongoDB.AspNet.Identity.nuspec
   last_updated_by: asitebro
   last_updated_on: 2017-05-08 16:14:38.000000000 Z
@@ -123,6 +130,7 @@ tools:
   category: Build, Test, Deploy
   sub_category: Version Control System
   image_url: https://img.stackshare.io/service/1046/git.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity
   detection_source: Repo Metadata
 - name: NuGet
   description: The package manager for .NET
@@ -132,6 +140,7 @@ tools:
   category: Build, Test, Deploy
   sub_category: Package Managers
   image_url: https://img.stackshare.io/service/2637/6I3oEOP4_400x400.jpg
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
   detection_source: TestApplication/packages.config
   last_updated_by: asitebro
   last_updated_on: 2017-05-08 16:14:38.000000000 Z
@@ -143,6 +152,7 @@ tools:
   category: Application Hosting
   sub_category: Web Server Interface
   image_url: https://img.stackshare.io/service/4967/New_Project__95_.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
   detection_source: TestApplication/packages.config
   last_updated_by: asitebro
   last_updated_on: 2017-05-08 16:14:38.000000000 Z
@@ -155,6 +165,7 @@ tools:
   category: Build, Test, Deploy
   sub_category: Integrated Development Environment
   image_url: https://img.stackshare.io/service/1451/SR2hUhQN.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/MongoDB.AspNet.Identity.sln
   detection_source: MongoDB.AspNet.Identity.sln
   last_updated_by: asitebro
   last_updated_on: 2017-05-08 16:14:38.000000000 Z
@@ -550,8 +561,14 @@ tools:
   last_updated_by: asitebro
   last_updated_on: 2017-05-08 16:14:38.000000000 Z
   vulnerabilities:
-  - name: Improper Handling of Exceptional Conditions in Newtonsoft.Json
+  - name: 'Duplicate Advisory: Improper Handling of Exceptional Conditions in Newtonsoft.Json'
     cve_id: 
+    cve_url: https://github.com/advisories/GHSA-8rfx-6mr3-5jh3
+    detected_date: Jan 4
+    severity: high
+    first_patched: 13.0.1
+  - name: Improper Handling of Exceptional Conditions in Newtonsoft.Json
+    cve_id: CVE-2024-21907
     cve_url: https://github.com/advisories/GHSA-5crp-9r3c-p9vr
     detected_date: Jun 23
     severity: high

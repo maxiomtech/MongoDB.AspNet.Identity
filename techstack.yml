@@ -1,0 +1,671 @@
+repo_name: maxiomtech/MongoDB.AspNet.Identity
+report_id: db458c88f9c10b97ff5721c83ab0b8e0
+version: 0.1
+repo_type: Public
+timestamp: '2024-01-05T09:24:08+00:00'
+requested_by: web-flow
+provider: github
+branch: master
+detected_tools_count: 44
+tools:
+- name: ASP.NET
+  description: An open source web framework for building modern web apps and services
+    with .NET
+  website_url: https://www.asp.net/
+  version: '4.5'
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Languages
+  image_url: https://img.stackshare.io/service/6755/2c45151a4a11d3a3c8e71bb34dd069d6_400x400.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/MongoDB.AspNet.Identity.csproj
+  detection_source: MongoDB.AspNet.Identity.csproj
+  last_updated_by: Jonathan Sheely
+  last_updated_on: 2013-10-27 03:29:44.000000000 Z
+- name: C#
+  description: Simple, general-purpose, object-oriented programming language for the
+    .NET platform
+  website_url: http://csharp.net
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Languages
+  image_url: https://img.stackshare.io/service/1015/1200px-C_Sharp_wordmark.svg.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity
+  detection_source: Repo Metadata
+- name: CSS 3
+  description: The latest evolution of the Cascading Style Sheets language
+  website_url: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS3
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Languages
+  image_url: https://img.stackshare.io/service/6727/css.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity
+  detection_source: Repo Metadata
+- name: JavaScript
+  description: Lightweight, interpreted, object-oriented language with first-class
+    functions
+  website_url: https://developer.mozilla.org/en-US/docs/Web/JavaScript
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Languages
+  image_url: https://img.stackshare.io/service/1209/javascript.jpeg
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity
+  detection_source: Repo Metadata
+- name: ".NET"
+  description: A free, cross-platform, open source developer platform for building
+    many different types of applications
+  website_url: http://www.microsoft.com/net/
+  license: MIT
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Frameworks (Full Stack)
+  image_url: https://img.stackshare.io/service/1014/IoPy1dce_400x400.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: ASP.NET Core
+  description: A cross-platform .NET framework for building modern cloud-based web
+    applications on Windows, Mac, or Linux
+  website_url: docs.microsoft.com/en-us/aspnet/core/
+  license: MIT
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Frameworks (Full Stack)
+  image_url: https://img.stackshare.io/service/11331/asp.net-core.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/MongoDB.AspNet.Identity.nuspec
+  detection_source: MongoDB.AspNet.Identity.nuspec
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Bootstrap
+  description: Simple and flexible HTML, CSS, and JS for popular UI components and
+    interactions
+  website_url: http://getbootstrap.com/
+  version: 3.0.0
+  license: MIT
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Front-End Frameworks
+  image_url: https://img.stackshare.io/service/1101/C9QJ7V3X.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: jQuery
+  description: The Write Less, Do More, JavaScript Library.
+  website_url: http://jquery.com/
+  license: MIT
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: Javascript UI Libraries
+  image_url: https://img.stackshare.io/service/1021/lxEKmMnB_400x400.jpg
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: MongoDB
+  description: The database for giant ideas
+  website_url: http://www.mongodb.com/
+  open_source: true
+  hosted_saas: false
+  category: Data Stores
+  sub_category: Databases
+  image_url: https://img.stackshare.io/service/1030/leaf-360x360.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/MongoDB.AspNet.Identity.nuspec
+  detection_source: MongoDB.AspNet.Identity.nuspec
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Git
+  description: Fast, scalable, distributed revision control system
+  website_url: http://git-scm.com/
+  open_source: true
+  hosted_saas: false
+  category: Build, Test, Deploy
+  sub_category: Version Control System
+  image_url: https://img.stackshare.io/service/1046/git.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity
+  detection_source: Repo Metadata
+- name: NuGet
+  description: The package manager for .NET
+  website_url: https://www.nuget.org/
+  open_source: false
+  hosted_saas: false
+  category: Build, Test, Deploy
+  sub_category: Package Managers
+  image_url: https://img.stackshare.io/service/2637/6I3oEOP4_400x400.jpg
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Owin
+  description: A standard interface between .NET web servers and web applications
+  website_url: http://owin.org/
+  open_source: false
+  hosted_saas: false
+  category: Application Hosting
+  sub_category: Web Server Interface
+  image_url: https://img.stackshare.io/service/4967/New_Project__95_.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Visual Studio
+  description: State-of-the-art tools and services that you can use to create great
+    apps for devices, the cloud, and everything in between.
+  website_url: http://msdn.microsoft.com/en-us/vstudio/aa718325.aspx
+  open_source: false
+  hosted_saas: false
+  category: Build, Test, Deploy
+  sub_category: Integrated Development Environment
+  image_url: https://img.stackshare.io/service/1451/SR2hUhQN.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/MongoDB.AspNet.Identity.sln
+  detection_source: MongoDB.AspNet.Identity.sln
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Modernizr
+  description: Respond to your user’s browser features
+  website_url: https://modernizr.com/
+  version: 2.6.2
+  license: MIT
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: Javascript Utilities & Libraries
+  image_url: https://img.stackshare.io/service/2440/9TeXWBzR_400x400.jpg
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Antlr
+  description: ANother Tool for Language Recognition
+  package_url: https://www.nuget.org/Antlr
+  version: 3.4.1
+  license: Other
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13151/default_048f7c1081704627a12b8b5e168cfdbc9f28fb33.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.AspNet.Identity.Core
+  description: Core interfaces for ASP.NET Identity
+  package_url: https://www.nuget.org/Microsoft.AspNet.Identity.Core
+  version: 2.2.1
+  license: Other
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13002/default_971bb108ce002c2032e407a9046135e1542c46c7.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/MongoDB.AspNet.Identity.nuspec
+  detection_source: MongoDB.AspNet.Identity.nuspec
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.AspNet.Identity.Owin
+  description: Owin implementation for ASP.NET Identity
+  package_url: https://www.nuget.org/Microsoft.AspNet.Identity.Owin
+  version: 2.2.1
+  license: Other
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13022/default_a0b0eac5a401515996bd8fc359ffcfbc844cbe90.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+  vulnerabilities:
+  - name: " Microsoft Security Advisory CVE-2023-33170: .NET Security Feature Bypass
+      Vulnerability"
+    cve_id: CVE-2023-33170
+    cve_url: https://github.com/advisories/GHSA-25c8-p796-jg6r
+    detected_date: Jul 12
+    severity: high
+    first_patched: 2.2.4
+- name: Microsoft.AspNet.Mvc
+  description: ASP.NET MVC is a web framework that gives you a powerful, patterns-based
+    way to build dynamic websites and Web APIs
+  package_url: https://www.nuget.org/Microsoft.AspNet.Mvc
+  version: 5.2.3
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12850/default_0f5233770e71818507f2339042e7e61bef904e70.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.AspNet.Razor
+  description: Razor is a markup syntax for adding server-side logic to web pages
+  package_url: https://www.nuget.org/Microsoft.AspNet.Razor
+  version: 3.2.3
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12930/default_f8bf1110f8f0beaf5fae35865de7f77ccd1139f0.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.AspNet.Web.Optimization
+  description: ASP.NET Optimization introduces a way to bundle and optimize CSS and
+    JavaScript files
+  package_url: https://www.nuget.org/Microsoft.AspNet.Web.Optimization
+  version: 1.1.3
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12966/default_bd8397841d0aa5de035298a9130ee2dc9d9b0ece.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.AspNet.WebPages
+  description: This package contains core runtime assemblies shared between ASP.NET
+    MVC and ASP.NET Web Pages
+  package_url: https://www.nuget.org/Microsoft.AspNet.WebPages
+  version: 3.2.3
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12947/default_d871263d8798790404638a4d3692cc70b6389166.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.CodeDom.Providers.DotNetCompilerPlatform
+  description: Replacement CodeDOM providers that use the new .NET Compiler Platform
+  package_url: https://www.nuget.org/Microsoft.CodeDom.Providers.DotNetCompilerPlatform
+  version: 1.0.0
+  open_source: false
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13106/default_048f7c1081704627a12b8b5e168cfdbc9f28fb33.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.Net.Compilers
+  description: 'Note: This package is deprecated'
+  package_url: https://www.nuget.org/Microsoft.Net.Compilers
+  version: 1.0.0
+  license: MIT
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13170/default_81ac985912284073db895b0d26abf3657532a164.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.Owin
+  description: Provides a set of helper types and abstractions for simplifying the
+    creation of OWIN components
+  package_url: https://www.nuget.org/Microsoft.Owin
+  version: 3.0.1
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12889/default_d56a77cbb06d3dae6daef9669108e3e01d2494af.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+  vulnerabilities:
+  - name: " .NET Denial of Service Vulnerability"
+    cve_id: CVE-2022-29117
+    cve_url: https://github.com/advisories/GHSA-3rq8-h3gj-r5c6
+    detected_date: Aug 31
+    severity: high
+    first_patched: 4.2.2
+  - name: Cookie parsing failure
+    cve_id: CVE-2020-1045
+    cve_url: https://github.com/advisories/GHSA-hxrm-9w7p-39cc
+    detected_date: Jul 8
+    severity: high
+    first_patched: 4.1.1
+- name: Microsoft.Owin.Host.SystemWeb
+  description: OWIN server that enables OWIN-based applications to run on IIS using
+    the ASP.NET request pipeline
+  package_url: https://www.nuget.org/Microsoft.Owin.Host.SystemWeb
+  version: 3.0.1
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12970/default_54d470a1e19c265eb229b6bd88965fb8df9f9f78.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.Owin.Security
+  description: Common types which are shared by the various authentication middleware
+    components
+  package_url: https://www.nuget.org/Microsoft.Owin.Security
+  version: 3.0.1
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12922/default_e43fb8cd51d87352a1197706afa527de5c3baecd.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.Owin.Security.Cookies
+  description: Middleware that enables an application to use cookie based authentication
+  package_url: https://www.nuget.org/Microsoft.Owin.Security.Cookies
+  version: 3.0.1
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12999/default_12f7186a6d439da94c192c70c3589768d943782d.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+  vulnerabilities:
+  - name: " .NET Denial of Service Vulnerability"
+    cve_id: CVE-2022-29117
+    cve_url: https://github.com/advisories/GHSA-3rq8-h3gj-r5c6
+    detected_date: Aug 31
+    severity: high
+    first_patched: 4.2.2
+- name: Microsoft.Owin.Security.Facebook
+  description: Middleware that enables an application to support Facebook's OAuth
+    2.0 authentication workflow
+  package_url: https://www.nuget.org/Microsoft.Owin.Security.Facebook
+  version: 3.0.1
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13279/default_58e2e43f71c25c7e8c3e64c2a30ddaf5c821729c.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.Owin.Security.Google
+  description: Contains middlewares to support Google's OAuth 2.0 authentication workflow
+  package_url: https://www.nuget.org/Microsoft.Owin.Security.Google
+  version: 3.0.1
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13271/default_0e6336285a2ac0713cff413264705f5aa2f348a1.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.Owin.Security.MicrosoftAccount
+  description: Middleware that enables an application to support the Microsoft Account
+    authentication workflow
+  package_url: https://www.nuget.org/Microsoft.Owin.Security.MicrosoftAccount
+  version: 3.0.1
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13310/default_1e1f93823dcbf467a805adfd578c74f8f54c6a4e.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.Owin.Security.OAuth
+  description: Middleware that enables an application to support any standard OAuth
+    2.0 authentication workflow
+  package_url: https://www.nuget.org/Microsoft.Owin.Security.OAuth
+  version: 3.0.1
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12983/default_c33fee4544dbdcb376300222dc5e214ee63f7ce9.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.Owin.Security.Twitter
+  description: Middleware that enables an application to support Twitter's OAuth 2.0
+    authentication workflow
+  package_url: https://www.nuget.org/Microsoft.Owin.Security.Twitter
+  version: 3.0.1
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13305/default_a905ee276a536c55784ed56585a51a44d19b6d5b.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.Web.Infrastructure
+  description: This package contains the Microsoft.Web.Infrastructure assembly that
+    lets you dynamically register HTTP modules at run time
+  package_url: https://www.nuget.org/Microsoft.Web.Infrastructure
+  version: 1.0.0
+  open_source: false
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12927/default_2aeaea161c566d1abfbaf3f2206fda12b1eea9cd.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Microsoft.jQuery.Unobtrusive.Validation
+  description: JQuery plugin that unobtrusively sets up jQuery.Validation
+  package_url: https://www.nuget.org/Microsoft.jQuery.Unobtrusive.Validation
+  version: 3.2.3
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13143/default_048f7c1081704627a12b8b5e168cfdbc9f28fb33.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: MongoDB.Bson
+  description: MongoDB's Official Bson Library
+  package_url: https://www.nuget.org/MongoDB.Bson
+  version: 2.4.3
+  open_source: false
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13027/default_79c0a8d9add56bcf90325ea0ad034f66b38d8dd7.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: MongoDB.Driver
+  description: Official .NET driver for MongoDB
+  package_url: https://www.nuget.org/MongoDB.Driver
+  version: 2.4.3
+  open_source: false
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12892/default_f3b66025ae87cade251c16c8d9e166b0f1df9597.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+  vulnerabilities:
+  - name: MongoDB .NET/C# Driver vulnerable to Deserialization of Untrusted Data
+    cve_id: CVE-2022-48282
+    cve_url: https://github.com/advisories/GHSA-7j9m-j397-g4wx
+    detected_date: Mar 4
+    severity: high
+    first_patched: 2.19.0
+- name: MongoDB.Driver.Core
+  description: Core Component of the Official MongoDB .NET Driver
+  package_url: https://www.nuget.org/MongoDB.Driver.Core
+  version: 2.4.3
+  open_source: false
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13134/default_048f7c1081704627a12b8b5e168cfdbc9f28fb33.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: Newtonsoft.Json
+  description: Json.NET is a popular high-performance JSON framework for .NET
+  package_url: https://www.nuget.org/Newtonsoft.Json
+  version: 6.0.4
+  license: MIT
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/nuget/image.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+  vulnerabilities:
+  - name: 'Duplicate Advisory: Improper Handling of Exceptional Conditions in Newtonsoft.Json'
+    cve_id: 
+    cve_url: https://github.com/advisories/GHSA-8rfx-6mr3-5jh3
+    detected_date: Jan 4
+    severity: high
+    first_patched: 13.0.1
+  - name: Improper Handling of Exceptional Conditions in Newtonsoft.Json
+    cve_id: CVE-2024-21907
+    cve_url: https://github.com/advisories/GHSA-5crp-9r3c-p9vr
+    detected_date: Jun 23
+    severity: high
+    first_patched: 13.0.1
+- name: Respond
+  description: The goal of this script is to provide a fast and lightweight
+  package_url: https://www.nuget.org/Respond
+  version: 1.2.0
+  license: MIT
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13229/default_e23dabba1be2c69fbf5fc50bdc46cbffbe6ca2cb.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: System.Runtime.InteropServices
+  description: Provides types that support COM interop and platform invoke services
+  package_url: https://www.nuget.org/System.Runtime.InteropServices
+  version: 4.3.0
+  open_source: false
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12908/default_2aeaea161c566d1abfbaf3f2206fda12b1eea9cd.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: System.Runtime.InteropServices.RuntimeInformation
+  description: Provides APIs to query about runtime and OS information
+  package_url: https://www.nuget.org/System.Runtime.InteropServices.RuntimeInformation
+  version: 4.3.0
+  open_source: false
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/12960/default_cd4457378b2b3dee674f43707df49edfbc5c04e5.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/MongoDB.AspNet.Identity.nuspec
+  detection_source: MongoDB.AspNet.Identity.nuspec
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: WebGrease
+  description: Web Grease is a suite of tools for optimizing javascript
+  package_url: https://www.nuget.org/WebGrease
+  version: 1.5.2
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13115/default_a057bdad489be3cb053d372a68695da4ac94962d.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+- name: jQuery.Validation
+  description: This jQuery plugin makes simple clientside form validation trivial,
+    while offering lots of option for customization
+  package_url: https://www.nuget.org/jQuery.Validation
+  version: 1.11.1
+  license: MIT
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13119/default_f0c74e534077001eb65a152707758ce46a2dc970.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/TestApplication/packages.config
+  detection_source: TestApplication/packages.config
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z
+  vulnerabilities:
+  - name: Regular Expression Denial of Service in jquery-validation
+    cve_id: CVE-2021-21252
+    cve_url: https://github.com/advisories/GHSA-jxwx-85vp-gvwm
+    detected_date: Mar 3
+    severity: high
+    first_patched: 1.19.3
+  - name: Regular expression denial of service in jquery-validation
+    cve_id: CVE-2021-43306
+    cve_url: https://github.com/advisories/GHSA-j9m2-h2pv-wvph
+    detected_date: May 31
+    severity: low
+    first_patched: 1.19.4
+- name: mongocsharpdriver
+  description: This package contains the legacy driver
+  package_url: https://www.nuget.org/mongocsharpdriver
+  version: 2.4.3
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: NuGet Packages
+  image_url: https://img.stackshare.io/package/13029/default_ed36ff3c005af695725e05bb15ea5b1f03de31f3.png
+  detection_source_url: https://github.com/maxiomtech/MongoDB.AspNet.Identity/blob/master/MongoDB.AspNet.Identity.nuspec
+  detection_source: MongoDB.AspNet.Identity.nuspec
+  last_updated_by: asitebro
+  last_updated_on: 2017-05-08 16:14:38.000000000 Z

@@ -1,28 +1,42 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDB.AspNet.Identity", "MongoDB.AspNet.Identity.csproj", "{0FF87680-235F-4231-8302-9BF6FCAC7476}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDB.AspNet.Identity", "MongoDB.AspNet.Identity.csproj", "{3E953EAB-8C00-43EE-9C0F-1605EA1BC65F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApplication", "TestApplication\TestApplication.csproj", "{4EF07067-48A5-4303-849A-9D800F482E31}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{64A9AD03-6DE1-4DA5-A3F4-F802A2B80BAB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDB.AspNet.Identity.Tests", "tests\MongoDB.AspNet.Identity.Tests\MongoDB.AspNet.Identity.Tests.csproj", "{001FC7E2-ADE3-4E11-90B0-81BACE08D399}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{704F9CA5-3EC4-437A-8092-23BCC4C7D08E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleWebApp", "samples\SampleWebApp\SampleWebApp.csproj", "{F0CCA591-D4FF-441E-8D35-8E399F7FFEC6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0FF87680-235F-4231-8302-9BF6FCAC7476}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0FF87680-235F-4231-8302-9BF6FCAC7476}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0FF87680-235F-4231-8302-9BF6FCAC7476}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0FF87680-235F-4231-8302-9BF6FCAC7476}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4EF07067-48A5-4303-849A-9D800F482E31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4EF07067-48A5-4303-849A-9D800F482E31}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4EF07067-48A5-4303-849A-9D800F482E31}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4EF07067-48A5-4303-849A-9D800F482E31}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3E953EAB-8C00-43EE-9C0F-1605EA1BC65F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E953EAB-8C00-43EE-9C0F-1605EA1BC65F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E953EAB-8C00-43EE-9C0F-1605EA1BC65F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E953EAB-8C00-43EE-9C0F-1605EA1BC65F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{001FC7E2-ADE3-4E11-90B0-81BACE08D399}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{001FC7E2-ADE3-4E11-90B0-81BACE08D399}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{001FC7E2-ADE3-4E11-90B0-81BACE08D399}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{001FC7E2-ADE3-4E11-90B0-81BACE08D399}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0CCA591-D4FF-441E-8D35-8E399F7FFEC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0CCA591-D4FF-441E-8D35-8E399F7FFEC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0CCA591-D4FF-441E-8D35-8E399F7FFEC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0CCA591-D4FF-441E-8D35-8E399F7FFEC6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{001FC7E2-ADE3-4E11-90B0-81BACE08D399} = {64A9AD03-6DE1-4DA5-A3F4-F802A2B80BAB}
+		{F0CCA591-D4FF-441E-8D35-8E399F7FFEC6} = {704F9CA5-3EC4-437A-8092-23BCC4C7D08E}
 	EndGlobalSection
 EndGlobal

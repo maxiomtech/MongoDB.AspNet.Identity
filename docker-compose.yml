@@ -1,0 +1,33 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb-identity
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=SampleIdentityDb
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  sample-app:
+    build:
+      context: .
+      dockerfile: samples/SampleWebApp/Dockerfile
+    container_name: sample-identity-app
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__MongoDB=mongodb://mongodb:27017/SampleIdentityDb
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+volumes:
+  mongodb_data:

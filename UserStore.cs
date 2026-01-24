@@ -26,6 +26,8 @@ namespace MongoDB.AspNet.Identity
     {
         private readonly IMongoDatabase _database;
         private bool _disposed;
+        private bool _migrationEnsured;
+        private readonly SemaphoreSlim _migrationLock = new(1, 1);
 
         /// <summary>
         /// The default collection name for users.
@@ -78,6 +80,31 @@ namespace MongoDB.AspNet.Identity
             _database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
+        #region Migration
+
+        /// <summary>
+        /// Ensures migration has been run. This is called automatically on first database access.
+        /// </summary>
+        private async Task EnsureMigrationAsync(CancellationToken cancellationToken)
+        {
+            if (_migrationEnsured) return;
+
+            await _migrationLock.WaitAsync(cancellationToken);
+            try
+            {
+                if (_migrationEnsured) return;
+
+                await MigrationHelper.EnsureUsersMigratedAsync<TUser>(_database, CollectionName, cancellationToken);
+                _migrationEnsured = true;
+            }
+            finally
+            {
+                _migrationLock.Release();
+            }
+        }
+
+        #endregion
+
         #region IUserStore
 
         /// <inheritdoc/>
@@ -87,6 +114,7 @@ namespace MongoDB.AspNet.Identity
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(user);
 
+            await EnsureMigrationAsync(cancellationToken);
             await UsersCollection.InsertOneAsync(user, cancellationToken: cancellationToken);
             return IdentityResult.Success;
         }
@@ -115,6 +143,7 @@ namespace MongoDB.AspNet.Identity
                 return null;
             }
 
+            await EnsureMigrationAsync(cancellationToken);
             return await UsersCollection
                 .Find(Builders<TUser>.Filter.Eq("_id", objectId))
                 .FirstOrDefaultAsync(cancellationToken);
@@ -126,6 +155,7 @@ namespace MongoDB.AspNet.Identity
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
+            await EnsureMigrationAsync(cancellationToken);
             return await UsersCollection
                 .Find(Builders<TUser>.Filter.Eq(u => u.NormalizedUserName, normalizedUserName))
                 .FirstOrDefaultAsync(cancellationToken);
@@ -232,6 +262,7 @@ namespace MongoDB.AspNet.Identity
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
+            await EnsureMigrationAsync(cancellationToken);
             var filter = Builders<TUser>.Filter.And(
                 Builders<TUser>.Filter.Eq("Logins.LoginProvider", loginProvider),
                 Builders<TUser>.Filter.Eq("Logins.ProviderKey", providerKey));
@@ -307,6 +338,7 @@ namespace MongoDB.AspNet.Identity
             ThrowIfDisposed();
             ArgumentNullException.ThrowIfNull(claim);
 
+            await EnsureMigrationAsync(cancellationToken);
             var filter = Builders<TUser>.Filter.And(
                 Builders<TUser>.Filter.Eq("Claims.ClaimType", claim.Type),
                 Builders<TUser>.Filter.Eq("Claims.ClaimValue", claim.Value));
@@ -385,6 +417,7 @@ namespace MongoDB.AspNet.Identity
             ThrowIfDisposed();
             ArgumentException.ThrowIfNullOrWhiteSpace(roleName);
 
+            await EnsureMigrationAsync(cancellationToken);
             var filter = Builders<TUser>.Filter.AnyEq(u => u.Roles, roleName);
             return await UsersCollection.Find(filter).ToListAsync(cancellationToken);
         }
@@ -482,6 +515,7 @@ namespace MongoDB.AspNet.Identity
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
+            await EnsureMigrationAsync(cancellationToken);
             return await UsersCollection
                 .Find(Builders<TUser>.Filter.Eq(u => u.NormalizedEmail, normalizedEmail))
                 .FirstOrDefaultAsync(cancellationToken);

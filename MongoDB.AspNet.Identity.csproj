@@ -28,7 +28,7 @@
     <PackageReference Include="MongoDB.Driver" Version="2.28.0" />
   </ItemGroup>
 
-  <!-- Exclude TestApplication and nuget folders from compilation -->
+  <!-- Exclude TestApplication, nuget, tests, and samples folders from compilation -->
   <ItemGroup>
     <Compile Remove="TestApplication\**" />
     <Content Remove="TestApplication\**" />
@@ -38,6 +38,14 @@
     <Content Remove="nuget\**" />
     <EmbeddedResource Remove="nuget\**" />
     <None Remove="nuget\**" />
+    <Compile Remove="tests\**" />
+    <Content Remove="tests\**" />
+    <EmbeddedResource Remove="tests\**" />
+    <None Remove="tests\**" />
+    <Compile Remove="samples\**" />
+    <Content Remove="samples\**" />
+    <EmbeddedResource Remove="samples\**" />
+    <None Remove="samples\**" />
   </ItemGroup>
 
 </Project>

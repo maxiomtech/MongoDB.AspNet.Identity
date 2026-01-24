@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Identity Demo</title>
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-500: #6b7280;
+            --gray-700: #374151;
+            --gray-900: #111827;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--gray-100); min-height: 100vh; }
+
+        /* Layout */
+        .app { display: flex; min-height: 100vh; }
+        .sidebar { width: 280px; background: var(--gray-900); color: white; padding: 20px; flex-shrink: 0; }
+        .main { flex: 1; padding: 30px; overflow-y: auto; }
+
+        /* Sidebar */
+        .logo { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: var(--primary); }
+        .logo-sub { font-size: 12px; color: var(--gray-500); margin-bottom: 30px; }
+        .nav-section { margin-bottom: 25px; }
+        .nav-title { font-size: 11px; text-transform: uppercase; color: var(--gray-500); margin-bottom: 10px; letter-spacing: 0.5px; }
+        .nav-item { display: block; padding: 10px 12px; border-radius: 6px; color: var(--gray-300); text-decoration: none; cursor: pointer; margin-bottom: 4px; transition: all 0.15s; }
+        .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-item.active { background: var(--primary); color: white; }
+
+        /* Cards */
+        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-200); }
+        .card-title { font-size: 16px; font-weight: 600; color: var(--gray-900); }
+        .card-body { padding: 20px; }
+
+        /* Forms */
+        .form-row { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--gray-700); margin-bottom: 6px; }
+        .form-input { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 14px; transition: border-color 0.15s, box-shadow 0.15s; }
+        .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+        .form-hint { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-ghost { background: transparent; color: var(--gray-700); }
+        .btn-ghost:hover { background: var(--gray-100); }
+        .btn-sm { padding: 6px 10px; font-size: 12px; }
+        .btn-block { width: 100%; }
+
+        /* Alerts */
+        .alert { padding: 12px 16px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; display: none; }
+        .alert.show { display: block; }
+        .alert-success { background: #d1fae5; color: #065f46; }
+        .alert-error { background: #fee2e2; color: #991b1b; }
+        .alert-info { background: #fef3c7; color: #92400e; }
+
+        /* Tables */
+        .table { width: 100%; border-collapse: collapse; }
+        .table th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 500; color: var(--gray-500); text-transform: uppercase; background: var(--gray-50); border-bottom: 1px solid var(--gray-200); }
+        .table td { padding: 12px 16px; border-bottom: 1px solid var(--gray-200); font-size: 14px; color: var(--gray-700); }
+        .table tr:hover td { background: var(--gray-50); }
+        .table tr:last-child td { border-bottom: none; }
+
+        /* Tags */
+        .tag { display: inline-block; padding: 2px 8px; background: var(--gray-100); color: var(--gray-700); border-radius: 4px; font-size: 12px; margin-right: 4px; }
+        .tag-primary { background: #d1fae5; color: #065f46; }
+
+        /* Empty state */
+        .empty { text-align: center; padding: 40px; color: var(--gray-500); }
+        .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+
+        /* Views */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* Two columns */
+        .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+
+        /* User panel */
+        .user-panel { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; margin-top: auto; }
+        .user-panel-name { font-weight: 500; font-size: 14px; }
+        .user-panel-email { font-size: 12px; color: var(--gray-500); }
+
+        /* Inline form */
+        .inline-form { display: flex; gap: 10px; }
+        .inline-form .form-input { flex: 1; }
+
+        /* Selected row */
+        .table tr.selected td { background: #ecfdf5; }
+
+        /* Click hint */
+        .click-hint { font-size: 12px; color: var(--gray-500); margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">MongoDB Identity</div>
+            <div class="logo-sub">ASP.NET Core Demo</div>
+
+            <nav class="nav-section">
+                <div class="nav-title">Authentication</div>
+                <a class="nav-item active" onclick="showView('auth')">Sign In / Register</a>
+                <a class="nav-item" onclick="showView('reset')">Reset Password</a>
+            </nav>
+
+            <nav class="nav-section">
+                <div class="nav-title">Management</div>
+                <a class="nav-item" onclick="showView('users')">Users</a>
+                <a class="nav-item" onclick="showView('roles')">Roles</a>
+            </nav>
+
+            <nav class="nav-section">
+                <div class="nav-title">User Details</div>
+                <a class="nav-item" onclick="showView('userRoles')" id="navUserRoles" style="display:none">Manage Roles</a>
+                <a class="nav-item" onclick="showView('userClaims')" id="navUserClaims" style="display:none">Manage Claims</a>
+            </nav>
+
+            <div style="flex:1"></div>
+
+            <div class="user-panel" id="loggedInUser" style="display:none">
+                <div class="user-panel-name" id="loggedInName"></div>
+                <div class="user-panel-email" id="loggedInEmail"></div>
+                <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%" onclick="logout()">Sign Out</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Auth View -->
+            <div id="view-auth" class="view active">
+                <div class="cols">
+                    <div class="card">
+                        <div class="card-header"><div class="card-title">Sign In</div></div>
+                        <div class="card-body">
+                            <div id="loginAlert" class="alert"></div>
+                            <form id="loginForm">
+                                <div class="form-row">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" class="form-input" id="loginUsername" required>
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" class="form-input" id="loginPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><div class="card-title">Create Account</div></div>
+                        <div class="card-body">
+                            <div id="registerAlert" class="alert"></div>
+                            <form id="registerForm">
+                                <div class="form-row">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" class="form-input" id="regUsername" required>
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-input" id="regEmail" required>
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" class="form-input" id="regPassword" required minlength="6">
+                                    <div class="form-hint">Minimum 6 characters</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reset Password View -->
+            <div id="view-reset" class="view">
+                <div class="cols">
+                    <div class="card">
+                        <div class="card-header"><div class="card-title">Step 1: Request Reset Token</div></div>
+                        <div class="card-body">
+                            <div id="forgotAlert" class="alert"></div>
+                            <form id="forgotForm">
+                                <div class="form-row">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" class="form-input" id="forgotEmail" required placeholder="Enter your account email">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">Request Token</button>
+                            </form>
+                            <div id="tokenDisplay" class="alert alert-info" style="margin-top:16px">
+                                <strong>Demo Mode:</strong> Token will appear here instead of being emailed.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><div class="card-title">Step 2: Set New Password</div></div>
+                        <div class="card-body">
+                            <div id="resetAlert" class="alert"></div>
+                            <form id="resetForm">
+                                <div class="form-row">
+                                    <label class="form-label">User ID</label>
+                                    <input type="text" class="form-input" id="resetUserId" required>
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">Reset Token</label>
+                                    <input type="text" class="form-input" id="resetToken" required>
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">New Password</label>
+                                    <input type="password" class="form-input" id="resetPassword" required minlength="6">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">Reset Password</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users View -->
+            <div id="view-users" class="view">
+                <div class="card">
+                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+                        <div class="card-title">All Users</div>
+                        <button class="btn btn-ghost btn-sm" onclick="loadUsers()">Refresh</button>
+                    </div>
+                    <div class="card-body" style="padding:0">
+                        <p class="click-hint" style="padding:16px 16px 0">Click a user row to manage their roles and claims</p>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Roles</th>
+                                    <th style="width:100px">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Roles View -->
+            <div id="view-roles" class="view">
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Manage Roles</div></div>
+                    <div class="card-body">
+                        <div id="roleAlert" class="alert"></div>
+                        <form id="roleForm" class="inline-form" style="margin-bottom:20px">
+                            <input type="text" class="form-input" id="newRoleName" required placeholder="Enter role name (e.g. Admin, Editor)">
+                            <button type="submit" class="btn btn-primary">Create Role</button>
+                        </form>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Role Name</th>
+                                    <th style="width:100px">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rolesTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Roles View -->
+            <div id="view-userRoles" class="view">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Manage Roles for <span id="userRolesName" style="color:var(--primary)"></span></div>
+                    </div>
+                    <div class="card-body">
+                        <div id="userRoleAlert" class="alert"></div>
+                        <form id="addRoleForm" class="inline-form" style="margin-bottom:20px">
+                            <select class="form-input" id="roleSelect" required></select>
+                            <button type="submit" class="btn btn-primary">Add Role</button>
+                        </form>
+                        <div class="form-label">Current Roles:</div>
+                        <div id="currentRoles" style="margin-top:8px"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Claims View -->
+            <div id="view-userClaims" class="view">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Manage Claims for <span id="userClaimsName" style="color:var(--primary)"></span></div>
+                    </div>
+                    <div class="card-body">
+                        <div id="claimAlert" class="alert"></div>
+                        <form id="addClaimForm" style="margin-bottom:20px">
+                            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px">
+                                <input type="text" class="form-input" id="claimType" required placeholder="Claim type (e.g. department)">
+                                <input type="text" class="form-input" id="claimValue" required placeholder="Claim value (e.g. engineering)">
+                                <button type="submit" class="btn btn-primary">Add</button>
+                            </div>
+                        </form>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Value</th>
+                                    <th style="width:100px">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="claimsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let selectedUserId = null;
+        let selectedUserName = null;
+
+        // View Management
+        function showView(view) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('view-' + view).classList.add('active');
+            event.target.classList.add('active');
+
+            if (view === 'users') loadUsers();
+            if (view === 'roles') loadRoles();
+            if (view === 'userRoles') loadUserRoles();
+            if (view === 'userClaims') loadUserClaims();
+        }
+
+        // Alert helper
+        function showAlert(id, message, type) {
+            const el = document.getElementById(id);
+            el.textContent = message;
+            el.className = 'alert show alert-' + type;
+            if (type !== 'info') setTimeout(() => el.classList.remove('show'), 4000);
+        }
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userName: document.getElementById('loginUsername').value,
+                        password: document.getElementById('loginPassword').value
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showAlert('loginAlert', 'Welcome back, ' + data.userName + '!', 'success');
+                    document.getElementById('loggedInUser').style.display = 'block';
+                    document.getElementById('loggedInName').textContent = data.userName;
+                    e.target.reset();
+                } else {
+                    showAlert('loginAlert', data.message || 'Login failed', 'error');
+                }
+            } catch (err) {
+                showAlert('loginAlert', 'Network error', 'error');
+            }
+        });
+
+        // Register
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userName: document.getElementById('regUsername').value,
+                        email: document.getElementById('regEmail').value,
+                        password: document.getElementById('regPassword').value
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showAlert('registerAlert', 'Account created successfully!', 'success');
+                    e.target.reset();
+                } else {
+                    showAlert('registerAlert', data.errors?.join(', ') || data.message, 'error');
+                }
+            } catch (err) {
+                showAlert('registerAlert', 'Network error', 'error');
+            }
+        });
+
+        // Forgot Password
+        document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: document.getElementById('forgotEmail').value })
+                });
+                const data = await res.json();
+                if (res.ok && data.token) {
+                    showAlert('forgotAlert', 'Token generated!', 'success');
+                    document.getElementById('tokenDisplay').innerHTML =
+                        '<strong>Token:</strong><br><code style="word-break:break-all;font-size:11px">' + data.token + '</code>';
+                    document.getElementById('tokenDisplay').classList.add('show');
+                    document.getElementById('resetUserId').value = data.userId;
+                    document.getElementById('resetToken').value = data.token;
+                } else {
+                    showAlert('forgotAlert', data.message, 'success');
+                }
+            } catch (err) {
+                showAlert('forgotAlert', 'Network error', 'error');
+            }
+        });
+
+        // Reset Password
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch('/api/auth/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: document.getElementById('resetUserId').value,
+                        token: document.getElementById('resetToken').value,
+                        newPassword: document.getElementById('resetPassword').value
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showAlert('resetAlert', 'Password reset! You can now sign in.', 'success');
+                    e.target.reset();
+                } else {
+                    showAlert('resetAlert', data.errors?.join(', ') || data.message, 'error');
+                }
+            } catch (err) {
+                showAlert('resetAlert', 'Network error', 'error');
+            }
+        });
+
+        // Load Users
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/auth/users');
+                const users = await res.json();
+                const tbody = document.getElementById('usersTable');
+
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty">No users yet. Create one!</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = users.map(u => `
+                    <tr class="${u.id === selectedUserId ? 'selected' : ''}" onclick="selectUser('${u.id}', '${u.userName}')" style="cursor:pointer">
+                        <td><strong>${u.userName}</strong></td>
+                        <td>${u.email || '-'}</td>
+                        <td>${u.roles?.length ? u.roles.map(r => '<span class="tag tag-primary">' + r + '</span>').join('') : '<span class="tag">None</span>'}</td>
+                        <td><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteUser('${u.id}')">Delete</button></td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                document.getElementById('usersTable').innerHTML = '<tr><td colspan="4" class="empty">Failed to load</td></tr>';
+            }
+        }
+
+        // Select User
+        function selectUser(id, name) {
+            selectedUserId = id;
+            selectedUserName = name;
+            document.getElementById('navUserRoles').style.display = 'block';
+            document.getElementById('navUserClaims').style.display = 'block';
+            document.getElementById('userRolesName').textContent = name;
+            document.getElementById('userClaimsName').textContent = name;
+            loadUsers();
+            loadRoles();
+        }
+
+        // Delete User
+        async function deleteUser(id) {
+            if (!confirm('Delete this user?')) return;
+            await fetch('/api/auth/users/' + id, { method: 'DELETE' });
+            if (id === selectedUserId) {
+                selectedUserId = null;
+                document.getElementById('navUserRoles').style.display = 'none';
+                document.getElementById('navUserClaims').style.display = 'none';
+            }
+            loadUsers();
+        }
+
+        // Load Roles
+        async function loadRoles() {
+            try {
+                const res = await fetch('/api/roles');
+                const roles = await res.json();
+                const tbody = document.getElementById('rolesTable');
+                const select = document.getElementById('roleSelect');
+
+                if (roles.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2" class="empty">No roles yet. Create one!</td></tr>';
+                    select.innerHTML = '<option value="">-- Create a role first --</option>';
+                    return;
+                }
+
+                tbody.innerHTML = roles.map(r => `
+                    <tr>
+                        <td><strong>${r.name}</strong></td>
+                        <td><button class="btn btn-danger btn-sm" onclick="deleteRole('${r.id}')">Delete</button></td>
+                    </tr>
+                `).join('');
+
+                select.innerHTML = roles.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
+            } catch (err) {
+                document.getElementById('rolesTable').innerHTML = '<tr><td colspan="2" class="empty">Failed to load</td></tr>';
+            }
+        }
+
+        // Create Role
+        document.getElementById('roleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch('/api/roles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: document.getElementById('newRoleName').value })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showAlert('roleAlert', 'Role created!', 'success');
+                    e.target.reset();
+                    loadRoles();
+                } else {
+                    showAlert('roleAlert', data.errors?.join(', ') || data.message, 'error');
+                }
+            } catch (err) {
+                showAlert('roleAlert', 'Network error', 'error');
+            }
+        });
+
+        // Delete Role
+        async function deleteRole(id) {
+            if (!confirm('Delete this role?')) return;
+            await fetch('/api/roles/' + id, { method: 'DELETE' });
+            loadRoles();
+        }
+
+        // Load User Roles
+        async function loadUserRoles() {
+            if (!selectedUserId) return;
+            try {
+                const res = await fetch('/api/auth/users');
+                const users = await res.json();
+                const user = users.find(u => u.id === selectedUserId);
+                if (user) {
+                    document.getElementById('currentRoles').innerHTML = user.roles?.length
+                        ? user.roles.map(r => '<span class="tag tag-primary">' + r + '</span>').join(' ')
+                        : '<span class="tag">No roles assigned</span>';
+                }
+            } catch (err) {}
+        }
+
+        // Add Role to User
+        document.getElementById('addRoleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!selectedUserId) return;
+            try {
+                const res = await fetch('/api/auth/users/' + selectedUserId + '/roles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roleName: document.getElementById('roleSelect').value })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showAlert('userRoleAlert', 'Role added!', 'success');
+                    loadUserRoles();
+                } else {
+                    showAlert('userRoleAlert', data.message, 'error');
+                }
+            } catch (err) {
+                showAlert('userRoleAlert', 'Network error', 'error');
+            }
+        });
+
+        // Load User Claims
+        async function loadUserClaims() {
+            if (!selectedUserId) return;
+            try {
+                const res = await fetch('/api/users/' + selectedUserId + '/claims');
+                const claims = await res.json();
+                const tbody = document.getElementById('claimsTable');
+
+                if (claims.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="empty">No claims</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = claims.map(c => `
+                    <tr>
+                        <td>${c.type}</td>
+                        <td>${c.value}</td>
+                        <td><button class="btn btn-danger btn-sm" onclick="removeClaim('${c.type}','${c.value}')">Remove</button></td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                document.getElementById('claimsTable').innerHTML = '<tr><td colspan="3" class="empty">Failed to load</td></tr>';
+            }
+        }
+
+        // Add Claim
+        document.getElementById('addClaimForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!selectedUserId) return;
+            try {
+                const res = await fetch('/api/users/' + selectedUserId + '/claims', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: document.getElementById('claimType').value,
+                        value: document.getElementById('claimValue').value
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showAlert('claimAlert', 'Claim added!', 'success');
+                    e.target.reset();
+                    loadUserClaims();
+                } else {
+                    showAlert('claimAlert', data.message, 'error');
+                }
+            } catch (err) {
+                showAlert('claimAlert', 'Network error', 'error');
+            }
+        });
+
+        // Remove Claim
+        async function removeClaim(type, value) {
+            await fetch('/api/users/' + selectedUserId + '/claims?type=' + encodeURIComponent(type) + '&value=' + encodeURIComponent(value), { method: 'DELETE' });
+            loadUserClaims();
+        }
+
+        // Logout
+        function logout() {
+            document.getElementById('loggedInUser').style.display = 'none';
+            showView('auth');
+        }
+    </script>
+</body>
+</html>

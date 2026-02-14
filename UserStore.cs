@@ -1,719 +1,808 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using Microsoft.AspNet.Identity;
+using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace MongoDB.AspNet.Identity
 {
     /// <summary>
-    ///     Class UserStore.
+    /// Represents a new instance of a persistence store for users, using MongoDB.
     /// </summary>
-    /// <typeparam name="TUser">The type of the t user.</typeparam>
+    /// <typeparam name="TUser">The type representing a user.</typeparam>
     public class UserStore<TUser> :
         IUserStore<TUser>,
-        IUserLoginStore<TUser>, 
-        IUserClaimStore<TUser>, 
+        IUserLoginStore<TUser>,
+        IUserClaimStore<TUser>,
         IUserRoleStore<TUser>,
-        IUserPasswordStore<TUser>, 
+        IUserPasswordStore<TUser>,
         IUserSecurityStampStore<TUser>,
         IUserEmailStore<TUser>,
-        IUserLockoutStore<TUser, string>,
-        IUserTwoFactorStore<TUser, string>
+        IUserLockoutStore<TUser>,
+        IUserTwoFactorStore<TUser>,
+        IUserPhoneNumberStore<TUser>,
+        IUserAuthenticationTokenStore<TUser>,
+        IQueryableUserStore<TUser>
         where TUser : IdentityUser
     {
-        #region Private Methods & Variables
-
-        /// <summary>
-        ///     The database
-        /// </summary>
-        private readonly IMongoDatabase db;
-
-        /// <summary>
-        ///     The _disposed
-        /// </summary>
+        private readonly IMongoDatabase _database;
         private bool _disposed;
+        private bool _migrationEnsured;
+        private readonly SemaphoreSlim _migrationLock = new(1, 1);
 
         /// <summary>
-        /// The AspNetUsers collection name
+        /// The default collection name for users.
         /// </summary>
-        private const string collectionName = "AspNetUsers";
+        private const string CollectionName = "AspNetUsers";
 
         /// <summary>
-        ///     Gets the database from connection string.
+        /// Gets the users collection.
         /// </summary>
-        /// <param name="connectionString">The connection string.</param>
-        /// <returns>MongoDatabase.</returns>
-        /// <exception cref="System.Exception">No database name specified in connection string</exception>
-        private IMongoDatabase GetDatabaseFromSqlStyle(string connectionString)
+        private IMongoCollection<TUser> UsersCollection => _database.GetCollection<TUser>(CollectionName);
+
+        /// <summary>
+        /// Gets an <see cref="IQueryable{TUser}"/> of users.
+        /// </summary>
+        public IQueryable<TUser> Users => UsersCollection.AsQueryable();
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="UserStore{TUser}"/> using the specified MongoDB connection string.
+        /// </summary>
+        /// <param name="connectionString">The MongoDB connection string (must include database name).</param>
+        public UserStore(string connectionString)
         {
             var mongoUrl = new MongoUrl(connectionString);
-            MongoClientSettings settings = MongoClientSettings.FromUrl(mongoUrl);
-            IMongoClient client = new MongoClient(settings);
-            if (mongoUrl.DatabaseName == null)
+            if (string.IsNullOrEmpty(mongoUrl.DatabaseName))
             {
-                throw new Exception("No database name specified in connection string");
+                throw new ArgumentException("The connection string must include a database name.", nameof(connectionString));
             }
-            return client.GetDatabase(mongoUrl.DatabaseName);
+
+            var client = new MongoClient(mongoUrl);
+            _database = client.GetDatabase(mongoUrl.DatabaseName);
         }
 
         /// <summary>
-        ///     Gets the database from URL.
+        /// Initializes a new instance of <see cref="UserStore{TUser}"/> using the specified MongoDB connection string and database name.
         /// </summary>
-        /// <param name="url">The URL.</param>
-        /// <returns>MongoDatabase.</returns>
-        private IMongoDatabase GetDatabaseFromUrl(MongoUrl url)
-        {
-            IMongoClient client = new MongoClient(url);
-            if (url.DatabaseName == null)
-            {
-                throw new Exception("No database name specified in connection string");
-            }
-            return client.GetDatabase(url.DatabaseName); // WriteConcern defaulted to Acknowledged
-        }
-
-        /// <summary>
-        ///     Uses connectionString to connect to server and then uses databae name specified.
-        /// </summary>
-        /// <param name="connectionString">The connection string.</param>
-        /// <param name="dbName">Name of the database.</param>
-        /// <returns>MongoDatabase.</returns>
-        private IMongoDatabase GetDatabase(string connectionString, string dbName)
+        /// <param name="connectionString">The MongoDB connection string.</param>
+        /// <param name="databaseName">The name of the database.</param>
+        public UserStore(string connectionString, string databaseName)
         {
             var client = new MongoClient(connectionString);
-            return client.GetDatabase(dbName);
+            _database = client.GetDatabase(databaseName);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="UserStore{TUser}"/> using an existing MongoDB database.
+        /// </summary>
+        /// <param name="database">The MongoDB database to use.</param>
+        public UserStore(IMongoDatabase database)
+        {
+            _database = database ?? throw new ArgumentNullException(nameof(database));
+        }
+
+        #region Migration
+
+        /// <summary>
+        /// Ensures migration has been run. This is called automatically on first database access.
+        /// </summary>
+        private async Task EnsureMigrationAsync(CancellationToken cancellationToken)
+        {
+            if (_migrationEnsured) return;
+
+            await _migrationLock.WaitAsync(cancellationToken);
+            try
+            {
+                if (_migrationEnsured) return;
+
+                await MigrationHelper.EnsureUsersMigratedAsync<TUser>(_database, CollectionName, cancellationToken);
+                _migrationEnsured = true;
+            }
+            finally
+            {
+                _migrationLock.Release();
+            }
         }
 
         #endregion
 
-        #region Constructors
-        
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="UserStore{TUser}" /> class. Uses DefaultConnection name if none was
-        ///     specified.
-        /// </summary>
-        public UserStore() 
-            : this("DefaultConnection")
+        #region IUserStore
+
+        /// <inheritdoc/>
+        public async Task<IdentityResult> CreateAsync(TUser user, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            await EnsureMigrationAsync(cancellationToken);
+            await UsersCollection.InsertOneAsync(user, cancellationToken: cancellationToken);
+            return IdentityResult.Success;
         }
 
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="UserStore{TUser}" /> class. Uses name from ConfigurationManager or a
-        ///     mongodb:// Url.
-        /// </summary>
-        /// <param name="connectionNameOrUrl">The connection name or URL.</param>
-        public UserStore(string connectionNameOrUrl)
+        /// <inheritdoc/>
+        public async Task<IdentityResult> DeleteAsync(TUser user, CancellationToken cancellationToken = default)
         {
-            if (connectionNameOrUrl.ToLower().StartsWith("mongodb://"))
-            {
-                db = GetDatabaseFromUrl(new MongoUrl(connectionNameOrUrl));
-            }
-            else
-            {
-                string connStringFromManager =
-                    ConfigurationManager.ConnectionStrings[connectionNameOrUrl].ConnectionString;
-                db = connStringFromManager.ToLower().StartsWith("mongodb://") 
-                    ? GetDatabaseFromUrl(new MongoUrl(connStringFromManager)) 
-                    : GetDatabaseFromSqlStyle(connStringFromManager);
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            await UsersCollection.DeleteOneAsync(
+                Builders<TUser>.Filter.Eq("_id", ObjectId.Parse(user.Id)),
+                cancellationToken);
+            return IdentityResult.Success;
         }
 
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="UserStore{TUser}" /> class. Uses name from ConfigurationManager or a
-        ///     mongodb:// Url.
-        ///     Database can be specified separately from connection server.
-        /// </summary>
-        /// <param name="connectionNameOrUrl">The connection name or URL.</param>
-        /// <param name="dbName">Name of the database.</param>
-        public UserStore(string connectionNameOrUrl, string dbName)
+        /// <inheritdoc/>
+        public async Task<TUser?> FindByIdAsync(string userId, CancellationToken cancellationToken = default)
         {
-            if (connectionNameOrUrl.ToLower().StartsWith("mongodb://"))
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
+            if (!ObjectId.TryParse(userId, out var objectId))
             {
-                db = GetDatabase(connectionNameOrUrl, dbName);
+                return null;
             }
-            else
-            {
-                db = GetDatabase(ConfigurationManager.ConnectionStrings[connectionNameOrUrl].ConnectionString, dbName);
-            }
+
+            await EnsureMigrationAsync(cancellationToken);
+            return await UsersCollection
+                .Find(Builders<TUser>.Filter.Eq("_id", objectId))
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UserStore{TUser}"/> class using a already initialized Mongo Database.
-        /// </summary>
-        /// <param name="mongoDatabase">The mongo database.</param>
-        public UserStore(IMongoDatabase mongoDatabase)
+        /// <inheritdoc/>
+        public async Task<TUser?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken = default)
         {
-            db = mongoDatabase;
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
+            await EnsureMigrationAsync(cancellationToken);
+            return await UsersCollection
+                .Find(Builders<TUser>.Filter.Eq(u => u.NormalizedUserName, normalizedUserName))
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        /// <inheritdoc/>
+        public Task<string?> GetNormalizedUserNameAsync(TUser user, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            return Task.FromResult(user.NormalizedUserName);
+        }
+
+        /// <inheritdoc/>
+        public Task<string> GetUserIdAsync(TUser user, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            return Task.FromResult(user.Id);
+        }
+
+        /// <inheritdoc/>
+        public Task<string?> GetUserNameAsync(TUser user, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            return Task.FromResult(user.UserName);
+        }
+
+        /// <inheritdoc/>
+        public Task SetNormalizedUserNameAsync(TUser user, string? normalizedName, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            user.NormalizedUserName = normalizedName;
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public Task SetUserNameAsync(TUser user, string? userName, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            user.UserName = userName;
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public async Task<IdentityResult> UpdateAsync(TUser user, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            user.ConcurrencyStamp = Guid.NewGuid().ToString();
+
+            await UsersCollection.ReplaceOneAsync(
+                Builders<TUser>.Filter.Eq("_id", ObjectId.Parse(user.Id)),
+                user,
+                new ReplaceOptions { IsUpsert = false },
+                cancellationToken);
+
+            return IdentityResult.Success;
         }
 
         #endregion
 
-        #region Methods
+        #region IUserLoginStore
 
-        /// <summary>
-        ///     Adds the claim asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="claim">The claim.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task AddClaimAsync(TUser user, Claim claim)
+        /// <inheritdoc/>
+        public Task AddLoginAsync(TUser user, UserLoginInfo login, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            if (!user.Claims.Any(x => x.ClaimType == claim.Type && x.ClaimValue == claim.Value))
-            {
-                user.Claims.Add(new IdentityUserClaim
-                {
-                    ClaimType = claim.Type,
-                    ClaimValue = claim.Value
-                });
-            }
-            return Task.FromResult(0);
-        }
-
-        /// <summary>
-        ///     Gets the claims asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task{IList{Claim}}.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<IList<Claim>> GetClaimsAsync(TUser user)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            IList<Claim> result = user.Claims.Select(c => new Claim(c.ClaimType, c.ClaimValue)).ToList();
-            return Task.FromResult(result);
-        }
-
-        /// <summary>
-        ///     Removes the claim asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="claim">The claim.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task RemoveClaimAsync(TUser user, Claim claim)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            user.Claims.RemoveAll(x => x.ClaimType == claim.Type && x.ClaimValue == claim.Value);
-            return Task.FromResult(0);
-        }
-
-
-        /// <summary>
-        ///     Creates the user asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task CreateAsync(TUser user)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            db.GetCollection<TUser>(collectionName).InsertOneAsync(user);
-            return Task.FromResult(user);
-        }
-
-        /// <summary>
-        ///     Deletes the user asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task DeleteAsync(TUser user)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            db.GetCollection<TUser>(collectionName)
-                .DeleteOneAsync(Builders<TUser>.Filter.Eq("_id", ObjectId.Parse(user.Id)));
-            return Task.FromResult(true);
-        }
-
-        /// <summary>
-        ///     Finds the by identifier asynchronous.
-        /// </summary>
-        /// <param name="userId">The user identifier.</param>
-        /// <returns>Task{`0}.</returns>
-        public Task<TUser> FindByIdAsync(string userId)
-        {
-            ThrowIfDisposed();
-            var user = db.GetCollection<TUser>(collectionName)
-                .Find(Builders<TUser>.Filter.Eq("_id", ObjectId.Parse(userId)))
-                .FirstOrDefaultAsync();
-            return user;
-        }
-
-        /// <summary>
-        ///     Finds the by name asynchronous.
-        /// </summary>
-        /// <param name="userName">Name of the user.</param>
-        /// <returns>Task{`0}.</returns>
-        public Task<TUser> FindByNameAsync(string userName)
-        {
-            ThrowIfDisposed();
-            var user = db.GetCollection<TUser>(collectionName)
-                .Find(Builders<TUser>.Filter.Eq("UserName", userName))
-                .FirstOrDefaultAsync();
-            return user;
-        }
-
-        /// <summary>
-        ///     Updates the user asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task UpdateAsync(TUser user)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            db.GetCollection<TUser>(collectionName)
-                .FindOneAndReplaceAsync(
-                Builders<TUser>.Filter.Eq("_id", ObjectId.Parse(user.Id)), 
-                user, 
-                new FindOneAndReplaceOptions<TUser> {IsUpsert = true});
-
-            return Task.FromResult(user);
-        }
-
-        /// <summary>
-        ///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
-        {
-            _disposed = true;
-        }
-
-        /// <summary>
-        ///     Adds the login asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="login">The login.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task AddLoginAsync(TUser user, UserLoginInfo login)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
+            ArgumentNullException.ThrowIfNull(user);
+            ArgumentNullException.ThrowIfNull(login);
 
             if (!user.Logins.Any(x => x.LoginProvider == login.LoginProvider && x.ProviderKey == login.ProviderKey))
             {
-                user.Logins.Add(login);
+                user.Logins.Add(new IdentityUserLogin
+                {
+                    LoginProvider = login.LoginProvider,
+                    ProviderKey = login.ProviderKey,
+                    ProviderDisplayName = login.ProviderDisplayName
+                });
             }
-            return Task.FromResult(true);
+
+            return Task.CompletedTask;
         }
 
-        /// <summary>
-        ///     Finds the user asynchronous.
-        /// </summary>
-        /// <param name="login">The login.</param>
-        /// <returns>Task{`0}.</returns>
-        public Task<TUser> FindAsync(UserLoginInfo login)
+        /// <inheritdoc/>
+        public async Task<TUser?> FindByLoginAsync(string loginProvider, string providerKey, CancellationToken cancellationToken = default)
         {
-            var filter = Builders<TUser>.Filter;
-            var user = db.GetCollection<TUser>(collectionName)
-                .Find(filter.And(filter.Eq("Logins.LoginProvider", login.LoginProvider),
-                    filter.Eq("Logins.ProviderKey", login.ProviderKey))).FirstOrDefaultAsync();
-            return user;
-        }
-
-        /// <summary>
-        ///     Gets the logins asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task{IList{UserLoginInfo}}.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user)
-        {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-            return Task.FromResult(user.Logins.ToIList());
+
+            await EnsureMigrationAsync(cancellationToken);
+            var filter = Builders<TUser>.Filter.And(
+                Builders<TUser>.Filter.Eq("Logins.LoginProvider", loginProvider),
+                Builders<TUser>.Filter.Eq("Logins.ProviderKey", providerKey));
+
+            return await UsersCollection.Find(filter).FirstOrDefaultAsync(cancellationToken);
         }
 
-        /// <summary>
-        ///     Removes the login asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="login">The login.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task RemoveLoginAsync(TUser user, UserLoginInfo login)
+        /// <inheritdoc/>
+        public Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-            user.Logins.RemoveAll(x => x.LoginProvider == login.LoginProvider && x.ProviderKey == login.ProviderKey);
-            return Task.FromResult(0);
+            ArgumentNullException.ThrowIfNull(user);
+
+            IList<UserLoginInfo> logins = user.Logins
+                .Select(l => new UserLoginInfo(l.LoginProvider, l.ProviderKey, l.ProviderDisplayName))
+                .ToList();
+
+            return Task.FromResult(logins);
         }
 
-        /// <summary>
-        ///     Gets the password hash asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task{System.String}.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<string> GetPasswordHashAsync(TUser user)
+        /// <inheritdoc/>
+        public Task RemoveLoginAsync(TUser user, string loginProvider, string providerKey, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
+            ArgumentNullException.ThrowIfNull(user);
+
+            user.Logins.RemoveAll(x => x.LoginProvider == loginProvider && x.ProviderKey == providerKey);
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region IUserClaimStore
+
+        /// <inheritdoc/>
+        public Task AddClaimsAsync(TUser user, IEnumerable<Claim> claims, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+            ArgumentNullException.ThrowIfNull(claims);
+
+            foreach (var claim in claims)
+            {
+                if (!user.Claims.Any(x => x.ClaimType == claim.Type && x.ClaimValue == claim.Value))
+                {
+                    var identityClaim = new IdentityUserClaim();
+                    identityClaim.InitializeFromClaim(claim);
+                    user.Claims.Add(identityClaim);
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public Task<IList<Claim>> GetClaimsAsync(TUser user, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            IList<Claim> claims = user.Claims.Select(c => c.ToClaim()).ToList();
+            return Task.FromResult(claims);
+        }
+
+        /// <inheritdoc/>
+        public async Task<IList<TUser>> GetUsersForClaimAsync(Claim claim, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(claim);
+
+            await EnsureMigrationAsync(cancellationToken);
+            var filter = Builders<TUser>.Filter.And(
+                Builders<TUser>.Filter.Eq("Claims.ClaimType", claim.Type),
+                Builders<TUser>.Filter.Eq("Claims.ClaimValue", claim.Value));
+
+            return await UsersCollection.Find(filter).ToListAsync(cancellationToken);
+        }
+
+        /// <inheritdoc/>
+        public Task RemoveClaimsAsync(TUser user, IEnumerable<Claim> claims, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+            ArgumentNullException.ThrowIfNull(claims);
+
+            foreach (var claim in claims)
+            {
+                user.Claims.RemoveAll(x => x.ClaimType == claim.Type && x.ClaimValue == claim.Value);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public Task ReplaceClaimAsync(TUser user, Claim claim, Claim newClaim, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+            ArgumentNullException.ThrowIfNull(claim);
+            ArgumentNullException.ThrowIfNull(newClaim);
+
+            var existingClaim = user.Claims.FirstOrDefault(x => x.ClaimType == claim.Type && x.ClaimValue == claim.Value);
+            if (existingClaim != null)
+            {
+                existingClaim.InitializeFromClaim(newClaim);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region IUserRoleStore
+
+        /// <inheritdoc/>
+        public Task AddToRoleAsync(TUser user, string roleName, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+            ArgumentException.ThrowIfNullOrWhiteSpace(roleName);
+
+            if (!user.Roles.Contains(roleName, StringComparer.OrdinalIgnoreCase))
+            {
+                user.Roles.Add(roleName);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public Task<IList<string>> GetRolesAsync(TUser user, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            return Task.FromResult<IList<string>>(user.Roles.ToList());
+        }
+
+        /// <inheritdoc/>
+        public async Task<IList<TUser>> GetUsersInRoleAsync(string roleName, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentException.ThrowIfNullOrWhiteSpace(roleName);
+
+            await EnsureMigrationAsync(cancellationToken);
+            var filter = Builders<TUser>.Filter.AnyEq(u => u.Roles, roleName);
+            return await UsersCollection.Find(filter).ToListAsync(cancellationToken);
+        }
+
+        /// <inheritdoc/>
+        public Task<bool> IsInRoleAsync(TUser user, string roleName, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+            ArgumentException.ThrowIfNullOrWhiteSpace(roleName);
+
+            return Task.FromResult(user.Roles.Contains(roleName, StringComparer.OrdinalIgnoreCase));
+        }
+
+        /// <inheritdoc/>
+        public Task RemoveFromRoleAsync(TUser user, string roleName, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+            ArgumentException.ThrowIfNullOrWhiteSpace(roleName);
+
+            user.Roles.RemoveAll(r => string.Equals(r, roleName, StringComparison.OrdinalIgnoreCase));
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region IUserPasswordStore
+
+        /// <inheritdoc/>
+        public Task<string?> GetPasswordHashAsync(TUser user, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
             return Task.FromResult(user.PasswordHash);
         }
 
-        /// <summary>
-        ///     Determines whether [has password asynchronous] [the specified user].
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<bool> HasPasswordAsync(TUser user)
+        /// <inheritdoc/>
+        public Task<bool> HasPasswordAsync(TUser user, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-            return Task.FromResult(user.PasswordHash != null);
+            ArgumentNullException.ThrowIfNull(user);
+
+            return Task.FromResult(!string.IsNullOrEmpty(user.PasswordHash));
         }
 
-        /// <summary>
-        ///     Sets the password hash asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="passwordHash">The password hash.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task SetPasswordHashAsync(TUser user, string passwordHash)
+        /// <inheritdoc/>
+        public Task SetPasswordHashAsync(TUser user, string? passwordHash, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
+            ArgumentNullException.ThrowIfNull(user);
+
             user.PasswordHash = passwordHash;
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
-        /// <summary>
-        ///     Adds to role asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="role">The role.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task AddToRoleAsync(TUser user, string role)
+        #endregion
+
+        #region IUserSecurityStampStore
+
+        /// <inheritdoc/>
+        public Task<string?> GetSecurityStampAsync(TUser user, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            if (!user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase))
-                user.Roles.Add(role);
-
-            return Task.FromResult(true);
-        }
-
-        /// <summary>
-        ///     Gets the roles asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task{IList{System.String}}.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<IList<string>> GetRolesAsync(TUser user)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-            return Task.FromResult<IList<string>>(user.Roles);
-        }
-
-        /// <summary>
-        ///     Determines whether [is in role asynchronous] [the specified user].
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="role">The role.</param>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<bool> IsInRoleAsync(TUser user, string role)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            return Task.FromResult(user.Roles.Contains(role, StringComparer.InvariantCultureIgnoreCase));
-        }
-
-        /// <summary>
-        ///     Removes from role asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="role">The role.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task RemoveFromRoleAsync(TUser user, string role)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
-
-            user.Roles.RemoveAll(r => String.Equals(r, role, StringComparison.InvariantCultureIgnoreCase));
-
-            return Task.FromResult(0);
-        }
-
-        /// <summary>
-        ///     Gets the security stamp asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <returns>Task{System.String}.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task<string> GetSecurityStampAsync(TUser user)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
+            ArgumentNullException.ThrowIfNull(user);
 
             return Task.FromResult(user.SecurityStamp);
         }
 
-        /// <summary>
-        ///     Sets the security stamp asynchronous.
-        /// </summary>
-        /// <param name="user">The user.</param>
-        /// <param name="stamp">The stamp.</param>
-        /// <returns>Task.</returns>
-        /// <exception cref="System.ArgumentNullException">user</exception>
-        public Task SetSecurityStampAsync(TUser user, string stamp)
+        /// <inheritdoc/>
+        public Task SetSecurityStampAsync(TUser user, string stamp, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
+            ArgumentNullException.ThrowIfNull(user);
 
             user.SecurityStamp = stamp;
-            return Task.FromResult(0);
-        }
-
-        /// <summary>
-        ///     Throws if disposed.
-        /// </summary>
-        /// <exception cref="System.ObjectDisposedException"></exception>
-        private void ThrowIfDisposed()
-        {
-            if (_disposed)
-                throw new ObjectDisposedException(GetType().Name);
+            return Task.CompletedTask;
         }
 
         #endregion
 
-        /// <summary>Set the user email</summary>
-        /// <param name="user"></param>
-        /// <param name="email"></param>
-        /// <returns></returns>
-        public Task SetEmailAsync(TUser user, string email)
-        {
-            ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
+        #region IUserEmailStore
 
-            user.Email = email;
-            return Task.FromResult(0);
+        /// <inheritdoc/>
+        public async Task<TUser?> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
+            await EnsureMigrationAsync(cancellationToken);
+            return await UsersCollection
+                .Find(Builders<TUser>.Filter.Eq(u => u.NormalizedEmail, normalizedEmail))
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
-        /// <summary>Get the user email</summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public Task<string> GetEmailAsync(TUser user)
+        /// <inheritdoc/>
+        public Task<string?> GetEmailAsync(TUser user, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
+            ArgumentNullException.ThrowIfNull(user);
 
             return Task.FromResult(user.Email);
         }
 
-        /// <summary>Returns true if the user email is confirmed</summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public Task<bool> GetEmailConfirmedAsync(TUser user)
+        /// <inheritdoc/>
+        public Task<bool> GetEmailConfirmedAsync(TUser user, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
+            ArgumentNullException.ThrowIfNull(user);
+
             return Task.FromResult(user.EmailConfirmed);
         }
 
-        /// <summary>Sets whether the user email is confirmed</summary>
-        /// <param name="user"></param>
-        /// <param name="confirmed"></param>
-        /// <returns></returns>
-        public Task SetEmailConfirmedAsync(TUser user, bool confirmed)
+        /// <inheritdoc/>
+        public Task<string?> GetNormalizedEmailAsync(TUser user, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (user == null)
-                throw new ArgumentNullException("user");
+            ArgumentNullException.ThrowIfNull(user);
+
+            return Task.FromResult(user.NormalizedEmail);
+        }
+
+        /// <inheritdoc/>
+        public Task SetEmailAsync(TUser user, string? email, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            user.Email = email;
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public Task SetEmailConfirmedAsync(TUser user, bool confirmed, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
 
             user.EmailConfirmed = confirmed;
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
-        /// <summary>Returns the user associated with this email</summary>
-        /// <param name="email"></param>
-        /// <returns></returns>
-        public Task<TUser> FindByEmailAsync(string email)
+        /// <inheritdoc/>
+        public Task SetNormalizedEmailAsync(TUser user, string? normalizedEmail, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            var user = db.GetCollection<TUser>(collectionName)
-                .Find(Builders<TUser>.Filter.Eq("Email", email))
-                .FirstOrDefaultAsync();
-            return user;
+            ArgumentNullException.ThrowIfNull(user);
+
+            user.NormalizedEmail = normalizedEmail;
+            return Task.CompletedTask;
         }
 
-        /// <summary>
-        ///     Returns the DateTimeOffset that represents the end of a user's lockout, any time in the past should be considered
-        ///     not locked out.
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public async Task<DateTimeOffset> GetLockoutEndDateAsync(TUser user)
+        #endregion
+
+        #region IUserLockoutStore
+
+        /// <inheritdoc/>
+        public Task<int> GetAccessFailedCountAsync(TUser user, CancellationToken cancellationToken = default)
         {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
-            return await Task.FromResult(user.LockoutEndDateUtc.HasValue
-                    ? new DateTimeOffset(DateTime.SpecifyKind(user.LockoutEndDateUtc.Value, DateTimeKind.Utc))
-                    : new DateTimeOffset());
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            return Task.FromResult(user.AccessFailedCount);
         }
 
-        /// <summary>
-        ///     Locks a user out until the specified end date (set to a past date, to unlock a user)
-        /// </summary>
-        /// <param name="user"></param>
-        /// <param name="lockoutEnd"></param>
-        /// <returns></returns>
-        public Task SetLockoutEndDateAsync(TUser user, DateTimeOffset lockoutEnd)
+        /// <inheritdoc/>
+        public Task<bool> GetLockoutEnabledAsync(TUser user, CancellationToken cancellationToken = default)
         {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
-            user.LockoutEndDateUtc = lockoutEnd.UtcDateTime;
-            return Task.FromResult(0);
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            return Task.FromResult(user.LockoutEnabled);
         }
 
-        /// <summary>
-        ///     Used to record when an attempt to access the user has failed
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public Task<int> IncrementAccessFailedCountAsync(TUser user)
+        /// <inheritdoc/>
+        public Task<DateTimeOffset?> GetLockoutEndDateAsync(TUser user, CancellationToken cancellationToken = default)
         {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            return Task.FromResult(user.LockoutEnd);
+        }
+
+        /// <inheritdoc/>
+        public Task<int> IncrementAccessFailedCountAsync(TUser user, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
             user.AccessFailedCount++;
             return Task.FromResult(user.AccessFailedCount);
         }
 
-        /// <summary>
-        ///     Used to reset the access failed count, typically after the account is successfully accessed
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public Task ResetAccessFailedCountAsync(TUser user)
+        /// <inheritdoc/>
+        public Task ResetAccessFailedCountAsync(TUser user, CancellationToken cancellationToken = default)
         {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
             user.AccessFailedCount = 0;
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
-        /// <summary>
-        ///     Returns the current number of failed access attempts.  This number usually will be reset whenever the password is
-        ///     verified or the account is locked out.
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public Task<int> GetAccessFailedCountAsync(TUser user)
+        /// <inheritdoc/>
+        public Task SetLockoutEnabledAsync(TUser user, bool enabled, CancellationToken cancellationToken = default)
         {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
-            return Task.FromResult(user.AccessFailedCount);
-        }
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
 
-        /// <summary>Returns whether the user can be locked out.</summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public Task<bool> GetLockoutEnabledAsync(TUser user)
-        {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
-            return Task.FromResult(user.LockoutEnabled);
-        }
-
-        /// <summary>Sets whether the user can be locked out.</summary>
-        /// <param name="user"></param>
-        /// <param name="enabled"></param>
-        /// <returns></returns>
-        public Task SetLockoutEnabledAsync(TUser user, bool enabled)
-        {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
             user.LockoutEnabled = enabled;
-            return Task.FromResult(0);
+            return Task.CompletedTask;
         }
 
-        /// <summary>
-        ///     Sets whether two factor authentication is enabled for the user
-        /// </summary>
-        /// <param name="user"></param>
-        /// <param name="enabled"></param>
-        /// <returns></returns>
-        public Task SetTwoFactorEnabledAsync(TUser user, bool enabled)
+        /// <inheritdoc/>
+        public Task SetLockoutEndDateAsync(TUser user, DateTimeOffset? lockoutEnd, CancellationToken cancellationToken = default)
         {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
-            user.TwoFactorEnabled = enabled;
-            return Task.FromResult(0);
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            user.LockoutEnd = lockoutEnd;
+            return Task.CompletedTask;
         }
 
-        /// <summary>
-        ///     Returns whether two factor authentication is enabled for the user
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public Task<bool> GetTwoFactorEnabledAsync(TUser user)
+        #endregion
+
+        #region IUserTwoFactorStore
+
+        /// <inheritdoc/>
+        public Task<bool> GetTwoFactorEnabledAsync(TUser user, CancellationToken cancellationToken = default)
         {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user));
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
             return Task.FromResult(user.TwoFactorEnabled);
         }
+
+        /// <inheritdoc/>
+        public Task SetTwoFactorEnabledAsync(TUser user, bool enabled, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            user.TwoFactorEnabled = enabled;
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region IUserPhoneNumberStore
+
+        /// <inheritdoc/>
+        public Task<string?> GetPhoneNumberAsync(TUser user, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            return Task.FromResult(user.PhoneNumber);
+        }
+
+        /// <inheritdoc/>
+        public Task<bool> GetPhoneNumberConfirmedAsync(TUser user, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            return Task.FromResult(user.PhoneNumberConfirmed);
+        }
+
+        /// <inheritdoc/>
+        public Task SetPhoneNumberAsync(TUser user, string? phoneNumber, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            user.PhoneNumber = phoneNumber;
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public Task SetPhoneNumberConfirmedAsync(TUser user, bool confirmed, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            user.PhoneNumberConfirmed = confirmed;
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region IUserAuthenticationTokenStore
+
+        /// <inheritdoc/>
+        public Task<string?> GetTokenAsync(TUser user, string loginProvider, string name, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            var token = user.Tokens.FirstOrDefault(t => t.LoginProvider == loginProvider && t.Name == name);
+            return Task.FromResult(token?.Value);
+        }
+
+        /// <inheritdoc/>
+        public Task RemoveTokenAsync(TUser user, string loginProvider, string name, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            user.Tokens.RemoveAll(t => t.LoginProvider == loginProvider && t.Name == name);
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public Task SetTokenAsync(TUser user, string loginProvider, string name, string? value, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+            ArgumentNullException.ThrowIfNull(user);
+
+            var existingToken = user.Tokens.FirstOrDefault(t => t.LoginProvider == loginProvider && t.Name == name);
+            if (existingToken != null)
+            {
+                existingToken.Value = value;
+            }
+            else
+            {
+                user.Tokens.Add(new IdentityUserToken
+                {
+                    LoginProvider = loginProvider,
+                    Name = name,
+                    Value = value
+                });
+            }
+
+            return Task.CompletedTask;
+        }
+
+        #endregion
+
+        #region IDisposable
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Throws if this class has been disposed.
+        /// </summary>
+        protected void ThrowIfDisposed()
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+        }
+
+        #endregion
     }
 }

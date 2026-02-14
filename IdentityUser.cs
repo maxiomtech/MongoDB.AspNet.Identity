@@ -1,109 +1,124 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.AspNet.Identity;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-
 
 namespace MongoDB.AspNet.Identity
 {
     /// <summary>
-    /// Class IdentityUser.
+    /// Represents a user in the identity system.
     /// </summary>
-    public class IdentityUser : IUser<string>
+    public class IdentityUser
     {
         /// <summary>
-        /// Unique key for the user
+        /// Gets or sets the unique identifier for this user.
         /// </summary>
-        /// <value>The identifier.</value>
-        /// <returns>The unique key for the user</returns>
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-	    public virtual string Id { get; set; }
-        /// <summary>
-        /// Gets or sets the name of the user.
-        /// </summary>
-        /// <value>The name of the user.</value>
-		public virtual string UserName { get; set; }
-        /// <summary>
-        /// Gets or sets the password hash.
-        /// </summary>
-        /// <value>The password hash.</value>
-		public virtual string PasswordHash { get; set; }
-        /// <summary>
-        /// Gets or sets the security stamp.
-        /// </summary>
-        /// <value>The security stamp.</value>
-		public virtual string SecurityStamp { get; set; }
-        /// <summary>
-        /// Gets the roles.
-        /// </summary>
-        /// <value>The roles.</value>
-		public virtual List<string> Roles { get; private set; }
-        /// <summary>
-        /// Gets the claims.
-        /// </summary>
-        /// <value>The claims.</value>
-		public virtual List<IdentityUserClaim> Claims { get; private set; }
-        /// <summary>
-        /// Gets the logins.
-        /// </summary>
-        /// <value>The logins.</value>
-		public virtual List<UserLoginInfo> Logins { get; private set; }
+        public virtual string Id { get; set; } = null!;
 
         /// <summary>
-        /// Gets the phone number
+        /// Gets or sets the user name for this user.
         /// </summary>
-        public virtual string PhoneNumber { get; set; }
+        public virtual string? UserName { get; set; }
 
         /// <summary>
-        /// Gets Email address
+        /// Gets or sets the normalized user name for this user.
         /// </summary>
-        public virtual string Email { get; set; }
+        public virtual string? NormalizedUserName { get; set; }
 
         /// <summary>
-        /// 
+        /// Gets or sets the email address for this user.
+        /// </summary>
+        public virtual string? Email { get; set; }
+
+        /// <summary>
+        /// Gets or sets the normalized email address for this user.
+        /// </summary>
+        public virtual string? NormalizedEmail { get; set; }
+
+        /// <summary>
+        /// Gets or sets a flag indicating if the email address has been confirmed.
         /// </summary>
         public virtual bool EmailConfirmed { get; set; }
 
         /// <summary>
-        /// 
+        /// Gets or sets the password hash for this user.
         /// </summary>
-        public DateTime? LockoutEndDateUtc { get; set; } = DateTime.Now.ToUniversalTime();
+        public virtual string? PasswordHash { get; set; }
 
         /// <summary>
-        /// 
+        /// Gets or sets a random value that should change when a user's credentials change.
         /// </summary>
-        public int AccessFailedCount { get; set; }
+        public virtual string? SecurityStamp { get; set; }
 
         /// <summary>
-        /// 
+        /// Gets or sets a random value that should change when a user is persisted to the store.
         /// </summary>
-        public bool LockoutEnabled { get; set; }
+        public virtual string? ConcurrencyStamp { get; set; } = Guid.NewGuid().ToString();
 
         /// <summary>
-        /// 
+        /// Gets or sets the phone number for this user.
         /// </summary>
-        public bool TwoFactorEnabled { get; set; }
+        public virtual string? PhoneNumber { get; set; }
+
+        /// <summary>
+        /// Gets or sets a flag indicating if the phone number has been confirmed.
+        /// </summary>
+        public virtual bool PhoneNumberConfirmed { get; set; }
+
+        /// <summary>
+        /// Gets or sets a flag indicating if two factor authentication is enabled for this user.
+        /// </summary>
+        public virtual bool TwoFactorEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the date and time when any user lockout ends.
+        /// </summary>
+        public virtual DateTimeOffset? LockoutEnd { get; set; }
+
+        /// <summary>
+        /// Gets or sets a flag indicating if lockout is enabled for this user.
+        /// </summary>
+        public virtual bool LockoutEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of failed login attempts for this user.
+        /// </summary>
+        public virtual int AccessFailedCount { get; set; }
+
+        /// <summary>
+        /// Gets the roles for this user.
+        /// </summary>
+        public virtual List<string> Roles { get; private set; } = new List<string>();
+
+        /// <summary>
+        /// Gets the claims for this user.
+        /// </summary>
+        public virtual List<IdentityUserClaim> Claims { get; private set; } = new List<IdentityUserClaim>();
+
+        /// <summary>
+        /// Gets the logins for this user.
+        /// </summary>
+        public virtual List<IdentityUserLogin> Logins { get; private set; } = new List<IdentityUserLogin>();
+
+        /// <summary>
+        /// Gets the authentication tokens for this user.
+        /// </summary>
+        public virtual List<IdentityUserToken> Tokens { get; private set; } = new List<IdentityUserToken>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityUser"/> class.
         /// </summary>
         public IdentityUser()
-		{
-			this.Claims = new List<IdentityUserClaim>();
-			this.Roles = new List<string>();
-			this.Logins = new List<UserLoginInfo>();
-		}
+        {
+        }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityUser"/> class.
+        /// Initializes a new instance of the <see cref="IdentityUser"/> class with the specified user name.
         /// </summary>
-        /// <param name="userName">Name of the user.</param>
-		public IdentityUser(string userName) : this()
-		{
-			this.UserName = userName;
-		}
-	}
+        /// <param name="userName">The user name.</param>
+        public IdentityUser(string userName) : this()
+        {
+            UserName = userName;
+        }
+    }
 }

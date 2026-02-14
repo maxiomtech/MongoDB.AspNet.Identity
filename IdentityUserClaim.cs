@@ -1,35 +1,39 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+using System.Security.Claims;
 
 namespace MongoDB.AspNet.Identity
 {
     /// <summary>
-    /// Class IdentityUserClaim.
+    /// Represents a claim that a user possesses.
     /// </summary>
     public class IdentityUserClaim
     {
         /// <summary>
-        /// Gets or sets the identifier.
+        /// Gets or sets the claim type for this claim.
         /// </summary>
-        /// <value>The identifier.</value>
-        [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public virtual string Id { get; set; }
+        public virtual string ClaimType { get; set; } = null!;
+
         /// <summary>
-        /// Gets or sets the user identifier.
+        /// Gets or sets the claim value for this claim.
         /// </summary>
-        /// <value>The user identifier.</value>
-        public virtual string UserId { get; set; }
+        public virtual string? ClaimValue { get; set; }
+
         /// <summary>
-        /// Gets or sets the type of the claim.
+        /// Converts the entity into a Claim instance.
         /// </summary>
-        /// <value>The type of the claim.</value>
-        public virtual string ClaimType { get; set; }
+        /// <returns>A <see cref="Claim"/> representing the claim.</returns>
+        public virtual Claim ToClaim()
+        {
+            return new Claim(ClaimType, ClaimValue ?? string.Empty);
+        }
+
         /// <summary>
-        /// Gets or sets the claim value.
+        /// Initializes this instance from the specified claim.
         /// </summary>
-        /// <value>The claim value.</value>
-        public virtual string ClaimValue { get; set; }
-        
+        /// <param name="claim">The claim to initialize from.</param>
+        public virtual void InitializeFromClaim(Claim claim)
+        {
+            ClaimType = claim.Type;
+            ClaimValue = claim.Value;
+        }
     }
 }
